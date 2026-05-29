@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Electron build artifacts
+out/
+
+# CA certificates generated at runtime
+certs/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.vscode/
+.idea/
+
+# Claude Code session data
+.claude/
+.agents/
+skills-lock.json
+
+# Downloaded ML models (large binaries — re-downloaded on first use)
+models/*
+!models/ai-source-detector-onnx/
+!models/clip_video_probe.json
+
+# Training datasets (large — download via scripts/setup_celeb_df_dataset.py)
+data/
+
+# Training cache (embeddings, joblib probes — regenerate via scripts/train_clip_probe/)
+cache/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Chrome-generated when loading unpacked extension locally
+extension/_metadata/
+
+# Packaged extension zip (build artifact)
+*.zip
+
+# User app data written at runtime
+config.json
+counts.json
+settings.json
+
+# Tests and evaluation scripts
+test/
+__mocks__/
+jest.config.js
+eval/
+
+# Landing page lives in its own repo (slopblock-website)
+landing-page/
+
+seo/

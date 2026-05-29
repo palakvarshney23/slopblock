@@ -1,0 +1,79 @@
+{
+  "name": "slop-block",
+  "author": "Palak Varshney <palakvarshney23012003@gmail.com>",
+  "version": "1.0.0",
+  "license": "GPL-3.0-only",
+  "description": "SlopBlock AI Slop Filter — Reclaim the internet from AI-generated slop.",
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "keywords": [
+    "ai-detection",
+    "slop",
+    "chrome-extension",
+    "electron",
+    "privacy",
+    "onnx"
+  ],
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "demo": "node -e \"const s=require('./service');const c=require('./classifier');c.loadModel(()=>{},()=>{}).then(()=>s.start(()=>{})).then(()=>console.log('Demo service running on http://localhost:8083')).catch(console.error)\"",
+    "lint": "eslint . --ext .js"
+  },
+  "build": {
+    "appId": "com.ai.slopfilter",
+    "productName": "SlopBlock",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png",
+      "requestedExecutionLevel": "asInvoker",
+      "signingHashAlgorithms": [
+        "sha256"
+      ],
+      "timeStampServer": "http://timestamp.digicert.com"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    
+    "files": [
+      "**/*",
+      "!models/**"
+    ],
+    "extraResources": [
+      {
+        "from": "extension",
+        "to": "extension"
+      },
+      {
+        "from": "models/ai-source-detector-onnx",
+        "to": "models/ai-source-detector-onnx"
+      }
+    ],
+    "asarUnpack": [
+      "**/node_modules/sharp/**"
+    ]
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "electron-updater": "^6.8.3",
+    "mockttp": "^4.2.3",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "electron": "^41.0.4",
+    "electron-builder": "^25.1.8",
+    "eslint": "^10.4.0",
+    "jest": "^30.4.2"
+  }
+}
