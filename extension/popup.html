@@ -1,0 +1,212 @@
+<!-- SPDX-FileCopyrightText: 2026 Palak Varshney <palakvarshney23012003@gmail.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-0:      #050505;
+      --bg-1:      #0A0A0A;
+      --bg-2:      #111111;
+      --border:    rgba(255,255,255,0.08);
+      --border-hi: rgba(255,255,255,0.14);
+      --text-1:    #FFFFFF;
+      --text-2:    #B4B4B4;
+      --text-3:    #7A7A7A;
+      --text-4:    #444444;
+    }
+
+    body {
+      width: 260px;
+      background: var(--bg-0);
+      color: var(--text-2);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px 11px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-1);
+    }
+
+    /* Logo mark */
+    .logo-mark {
+      width: 18px; height: 18px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--text-1);
+    }
+
+    .status-wrap {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-label {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-4);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .status-dot.on {
+      background: var(--text-1);
+      box-shadow: 0 0 5px rgba(255,255,255,0.5);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+    .status-dot.off { background: rgba(255,80,80,0.6); }
+    @keyframes pulse {
+      0%,100% { opacity:1; box-shadow:0 0 5px rgba(255,255,255,0.5); }
+      50%      { opacity:0.35; box-shadow:none; }
+    }
+
+    /* ── Stats strip ── */
+    .stats {
+      display: flex;
+      align-items: stretch;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-0);
+    }
+    .stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 13px 6px 11px;
+      gap: 5px;
+      position: relative;
+    }
+    .stat + .stat::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 22%; bottom: 22%;
+      width: 1px;
+      background: var(--border);
+    }
+    .stat-num {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text-1);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 8px;
+      color: var(--text-3);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 9px 14px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--bg-0);
+    }
+    .footer-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--text-4);
+      flex-shrink: 0;
+    }
+    .footer-text {
+      font-size: 10px;
+      color: var(--text-3);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Offline state ── */
+    .off-msg {
+      padding: 18px 14px;
+      color: var(--text-3);
+      font-size: 11px;
+      line-height: 1.65;
+      text-align: center;
+      background: var(--bg-0);
+    }
+    .off-msg span {
+      display: block;
+      color: rgba(255,80,80,0.7);
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <!-- SlopBlock logo mark -->
+    <svg class="logo-mark" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0.75" y="0.75" width="16.5" height="16.5" rx="4" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+      <path d="M5 7 L9 4.5 L13 7 L13 11.5 L9 14 L5 11.5 Z" stroke="rgba(255,255,255,0.75)" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
+      <circle cx="9" cy="9" r="1.5" fill="rgba(255,255,255,0.75)"/>
+    </svg>
+    <span class="header-title">SLOPBLOCK</span>
+    <div class="status-wrap">
+      <span class="status-label" id="statusLabel">OFFLINE</span>
+      <span class="status-dot" id="dot"></span>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num" id="textCount">—</div>
+        <div class="stat-label">TEXT</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="imgCount">—</div>
+        <div class="stat-label">IMG</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="ytCount">—</div>
+        <div class="stat-label">YT</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-dot"></div>
+      <div class="footer-text" id="footerText">Connected to local service</div>
+    </div>
+  </div>
+
+  <div id="offline" style="display:none" class="off-msg">
+    <span>APP OFFLINE</span>
+    Start SlopBlock to activate.
+  </div>
+
+<script src="popup.js"></script>
+</body>
+</html>
