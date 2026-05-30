@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlopBlock — Live Demo</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#c9d1d9; --accent:#58a6ff; --danger:#da3633; --ok:#2ea043; --warn:#d29922; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  header { text-align:center; padding:48px 20px 24px; border-bottom:1px solid var(--border); }
+  header h1 { margin:0 0 8px; font-size:clamp(28px,4vw,44px); letter-spacing:-0.5px; }
+  header p { margin:0 auto; max-width:640px; color:#8b949e; }
+  .tabs { display:flex; justify-content:center; gap:12px; padding:20px; }
+  .tab { background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:600; }
+  .tab.active { border-color:var(--accent); color:var(--accent); }
+  .container { max-width:860px; margin:0 auto; padding:0 20px 60px; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:20px; }
+  .card h2 { margin-top:0; font-size:18px; }
+  textarea, input[type="url"] { width:100%; background:#0d1117; border:1px solid var(--border); color:var(--text); padding:12px; border-radius:8px; font-size:15px; resize:vertical; }
+  textarea { min-height:140px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
+  button.primary { background:var(--accent); color:#0d1117; border:none; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; }
+  button.secondary { background:var(--card); color:var(--text); border:1px solid var(--border); padding:8px 14px; border-radius:8px; cursor:pointer; }
+  .samples { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .result { margin-top:16px; padding:16px; border-radius:10px; border:1px solid var(--border); display:none; }
+  .result.show { display:block; }
+  .result.slop { background:rgba(218,54,51,0.08); border-color:rgba(218,54,51,0.35); }
+  .result.clean { background:rgba(46,160,67,0.08); border-color:rgba(46,160,67,0.35); }
+  .meter { height:10px; background:#30363d; border-radius:5px; overflow:hidden; margin:10px 0; }
+  .meter > div { height:100%; transition:width .4s ease; }
+  .badge { display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+  .badge.slop { background:rgba(218,54,51,0.15); color:#ff7b72; }
+  .badge.clean { background:rgba(46,160,67,0.15); color:#3fb950; }
+  footer { text-align:center; color:#8b949e; padding:40px 20px; font-size:13px; border-top:1px solid var(--border); }
+  .meta { color:#8b949e; font-size:13px; margin-top:8px; }
+  a { color:var(--accent); }
+  .status { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#8b949e; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#3fb950; }
+  .dot.off { background:#8b949e; }
+  pre { background:#0d1117; border:1px solid var(--border); padding:12px; border-radius:8px; overflow:auto; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SlopBlock Demo</h1>
+  <p>Real-time AI slop detection — text, images, and code-review artifacts. <span class="status" id="svcStatus"><span class="dot off"></span> Service offline (using client heuristics)</span></p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('text')">Text Analysis</button>
+  <button class="tab" onclick="switchTab('image')">Image Analysis</button>
+  <button class="tab" onclick="switchTab('api')">API Playground</button>
+</div>
+
+<div class="container">
+
+  <div id="panel-text" class="panel active">
+    <div class="card">
+      <h2>Paste text to analyze</h2>
+      <textarea id="textInput" placeholder="Paste a PR description, blog paragraph, social post, or cover letter here..."></textarea>
+      <div class="row">
+        <button class="primary" onclick="analyzeText()">Analyze</button>
+        <button class="secondary" onclick="clearText()">Clear</button>
+      </div>
+      <div class="samples">
+        <button class="secondary" onclick="loadSample('ai-blog')">AI Blog Intro</button>
+        <button class="secondary" onclick="loadSample('human-reddit')">Human Reddit</button>
+        <button class="secondary" onclick="loadSample('ai-linkedin')">AI LinkedIn Post</button>
+        <button class="secondary" onclick="loadSample('human-pr')">Human PR Desc</button>
+        <button class="secondary" onclick="loadSample('ai-seo')">SEO Slop</button>
+      </div>
+      <div id="textResult" class="result">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span id="textVerdict" class="badge"></span>
+          <span id="textConf" style="font-weight:700;font-size:18px;"></span>
+        </div>
+        <div class="meter"><div id="textMeter" style="width:0%"></div></div>
+        <div class="meta" id="textMethod"></div>
+        <pre id="textDetails"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-image" class="panel">
+    <div class="card">
+      <h2>Image URL to analyze</h2>
+      <input type="url" id="imgInput" placeholder="https://example.com/photo.jpg">
+      <div class="row">
+        <button class="primary" onclick="analyzeImage()">Analyze</button>
+        <button class="secondary" onclick="clearImage()">Clear</button>
+      </div>
+      <div class="samples">
+        <button class="secondary" onclick="loadImage('midjourney')">Midjourney Landscape</button>
+        <button class="secondary" onclick="loadImage('dalle')">DALL-E Product</button>
+        <button class="secondary" onclick="loadImage('real')">Real Photo</button>
+      </div>
+      <div id="imgResult" class="result">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span id="imgVerdict" class="badge"></span>
+          <span id="imgConf" style="font-weight:700;font-size:18px;"></span>
+        </div>
+        <div class="meter"><div id="imgMeter" style="width:0%"></div></div>
+        <div class="meta" id="imgMethod"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-api" class="panel">
+    <div class="card">
+      <h2>Local API Playground</h2>
+      <p style="color:#8b949e">If the SlopBlock service is running on <code>http://localhost:8083</code>, these calls will hit the real ONNX ensemble.</p>
+      <pre id="apiStatus">Checking service...</pre>
+      <div class="row" style="margin-top:12px;">
+        <button class="primary" onclick="pingService()">Ping Service</button>
+        <button class="secondary" onclick="fetchTokenAndShow()">Fetch Token</button>
+      </div>
+      <pre id="apiToken" style="margin-top:12px;display:none"></pre>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+   · <a href="https://" target="_blank">GitHub</a> · <a href="" target="_blank"></a>
+</footer>
+
+<script>
+/* --- Client-side heuristic fallback (mirrors classifier.js getSlopScore) --- */
+const SLOP_PHRASES = [
+  'delve into','nuanced understanding','it is worth noting that',"it's worth noting",
+  'it is important to note',"it's important to note",'this underscores','this highlights the importance',
+  "in today's rapidly evolving","in today's fast-paced",'unlock the potential','unlock your potential',
+  'game-changer','holistic approach','synergistic','foster a culture of','foster innovation',
+  'leverage the power of','dive deep into','dive deeper into','comprehensive guide',
+  'shed light on','navigate the complexities','embark on a journey','seamlessly integrates',
+  'robust framework','at the forefront of','revolutionize the way','without further ado',
+  'in the realm of',"let's explore","i'll walk you through",'by the end of this',
+  'in this article, we will','with that being said','having said that','key takeaways',
+  'actionable insights','let me know in the comments','in the ever-evolving','stay ahead of the curve',
+  'thrilled to announce','it goes without saying','at its core','moving forward,',
+  'in summary,','to put it simply','make no mistake','pave the way','cutting-edge',
+  'best practices','the bottom line is','a testament to','when it comes to',
+  'i hope this helps','i hope this article','feel free to','certainly!','great question',
+  'as an ai','as a language model','let me clarify','in essence,',"it's important to note",
+  'it is important to understand','as we delve','this article will','this guide will',
+  'we will explore',"let's dive into",'transformative impact','landscape is constantly',
+  'ever-changing landscape','multifaceted approach',"it's worth mentioning",
+  'it should be noted',"it's crucial to",'it is crucial to','paramount importance',
+  'underscore the importance','in the context of','plays a crucial role',
+  'plays a pivotal role','in recent years,','navigating the complexities','fostering genuine',
+  'fostering authentic','fostering a culture','competitive landscape','moving forward in',
+  'the game-changer is','it is paramount','the bottom line:','what truly matters',
+  'thrilled to be','excited to share','excited to announce'
+]
+
+function clientSlopScore(text) {
+  let score = 0
+  const lower = text.toLowerCase()
+  const words = text.split(/\s+/).filter(w => w.length > 2)
+  const safeText = text.replace(/\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Ave|Blvd|Dept|Inc|Ltd|Corp|vs|etc|approx|est|fig|no|vol|pp|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec|U\.S|e\.g|i\.e)\./gi, '$1\u2024')
+  const sentences = safeText.split(/[.!?]+/).filter(s => s.trim().length > 8)
+  const lengths = sentences.map(s => s.split(/\s+/).length)
+
+  // citations whitelist
+  const citationNum = (text.match(/\[\d+(?:,\s*\d+)*\]/g) || []).length
+  const citationAuthor = (text.match(/\([A-Z][a-zA-Zé\-]+(?:\s+(?:&\s+)?[A-Z][a-zA-Zé\-]+)*,\s*\d{4}[a-z]?\)/g) || []).length
+  if (citationNum + citationAuthor >= 4) score -= 10
+  else if (citationNum + citationAuthor >= 2) score -= 6
+
+  // structural
+  if (sentences.length > 6) {
+    const avgLen = words.length / sentences.length
+    const variance = lengths.reduce((a,b) => a + Math.pow(b - avgLen, 2), 0) / lengths.length
+    if (variance < 100) score += 3
+    if (Math.max(...lengths) - Math.min(...lengths) < 20) score += 2
+  }
+
+  // short-text openers
+  if (sentences.length >= 2 && sentences.length <= 5) {
+    if (/\blet me (walk you through|explain|break (this|it) down)\b/i.test(text)) score += 4
+    if (/\bhere'?s (why|what|how|the thing)\b/i.test(text)) score += 3
+    if (/\bthe (truth|reality|key|secret) is\b/i.test(text)) score += 3
+    if (/\bin (today'?s|this) (world|age|era|landscape|digital)\b/i.test(text)) score += 3
+    if (/\b(drop|comment|share) (below|your thoughts|if you)\b/i.test(text)) score += 4
+    if (/\bfollow (me|us) for (more|updates)\b/i.test(text)) score += 4
+  }
+
+  // human signals
+  const humanSignals = (text.match(/https?:\/\/\S+/g) || []).length
+    + (text.match(/@[\w]+/g) || []).length
+    + (text.match(/```[\s\S]*?```|`[^`]+`/g) || []).length
+  if (humanSignals >= 2) score -= 6
+  else if (humanSignals >= 1) score -= 3
+
+  // phrases
+  let phraseHits = 0
+  for (const p of SLOP_PHRASES) {
+    const re = new RegExp('\\b' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i')
+    if (re.test(lower)) phraseHits++
+  }
+  score += (text.length < 200 && phraseHits < 2) ? 0 : phraseHits * 2
+
+  // formatting
+  const emojiCount = (text.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) || []).length
+  if (emojiCount > 8) score += 6
+  else if (emojiCount > 4) score += 3
+  if (/[\u2705\u2714\uFE0F\u2714]/u.test(text)) score += 5
+  if ((text.match(/^[\u2022\-–—*]/gm) || []).length > 3) score += 4
+  if ((text.match(/^\d+\.\s/gm) || []).length >= 3) score += 4
+
+  // lexical diversity
+  const wc = {}
+  for (const w of words) wc[w] = (wc[w] || 0) + 1
+  const uniqueRatio = Object.keys(wc).length / (words.length || 1)
+  if (uniqueRatio < 0.48) score += 4
+  if (uniqueRatio < 0.40) score += 3
+
+  // burstiness
+  if (sentences.length >= 4) {
+    const mean = lengths.reduce((a,b) => a+b,0)/lengths.length
+    if (mean > 0) {
+      const std = Math.sqrt(lengths.reduce((a,b) => a + Math.pow(b-mean,2),0)/lengths.length)
+      if (std/mean < 0.25) score += 3
+      else if (std/mean < 0.35) score += 1
+    }
+  }
+
+  // openers
+  if (/\bin (this|our) (article|post|guide|tutorial|blog|piece)\b/i.test(text)) score += 3
+  if (/\bin conclusion[,.]?\s/i.test(text) || /\bto summarize[,.]?\s/i.test(text)) score += 4
+  if (/\bhope (this|you found this)\b/i.test(text)) score += 3
+
+  return Math.max(0, Math.min(score, 40))
+}
+
+/* --- Samples --- */
+const SAMPLES = {
+  'ai-blog': `In this comprehensive guide, we will delve into the nuanced approach of unlocking your potential in today's rapidly evolving digital landscape. It is worth noting that best practices are paramount. Let's explore how you can stay ahead of the curve with these actionable insights.`,
+  'human-reddit': `Bro you need to dump her immediately. My ex did the exact same thing for 3 years and it only got worse. Check out r/relationships wiki — it's basically a roadmap for what NOT to do. Also @therapyworks if you actually want to fix things lol.`,
+  'ai-linkedin': `Thrilled to announce that I have embarked on an exciting new journey! This opportunity represents a transformative impact on my career. I want to thank everyone who supported me. Here are 3 key takeaways from my experience. What do you think? Comment below!`,
+  'human-pr': `Refactor auth middleware to use signed cookies instead of session tokens. Fixes #412 where CSRF tokens weren't rotating after password change. Added tests in tests/auth-cookie.spec.ts — coverage from 78% to 94%. Breaking: remove legacy X-Auth-Token header support (deprecated in v2.1). Migration guide updated.`,
+  'ai-seo': `When it comes to SEO, navigating the complexities can feel overwhelming. This article will shed light on the best practices you need to succeed. Whether you're a beginner or an expert, these strategies will revolutionize the way you approach content. Let's dive into the ever-changing landscape of search engine optimization.`
+}
+
+const IMAGES = {
+  midjourney: 'https://cdn.midjourney.com/example/landscape.png',
+  dalle: 'https://oaidalleapiprodscus.blob.core.windows.net/example/product.png',
+  real: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb'
+}
+
+/* --- UI helpers --- */
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase().includes(id)))
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + id))
+}
+
+function clearText() { document.getElementById('textInput').value = ''; document.getElementById('textResult').classList.remove('show','slop','clean') }
+function clearImage() { document.getElementById('imgInput').value = ''; document.getElementById('imgResult').classList.remove('show','slop','clean') }
+function loadSample(key) { document.getElementById('textInput').value = SAMPLES[key]; analyzeText() }
+function loadImage(key) { document.getElementById('imgInput').value = IMAGES[key]; analyzeImage() }
+
+async function analyzeText() {
+  const text = document.getElementById('textInput').value.trim()
+  if (!text) return
+  const heuristic = clientSlopScore(text)
+  const conf = Math.round(Math.max(0, Math.min(heuristic / 16, 1.0)) * 100)
+  const isSlop = conf >= 60
+  const result = document.getElementById('textResult')
+  result.classList.add('show')
+  result.classList.toggle('slop', isSlop)
+  result.classList.toggle('clean', !isSlop)
+  document.getElementById('textVerdict').textContent = isSlop ? 'AI Slop Detected' : 'Looks Human'
+  document.getElementById('textVerdict').className = 'badge ' + (isSlop ? 'slop' : 'clean')
+  document.getElementById('textConf').textContent = conf + '% confidence'
+  document.getElementById('textMeter').style.width = conf + '%'
+  document.getElementById('textMeter').style.background = isSlop ? '#da3633' : '#2ea043'
+  document.getElementById('textMethod').textContent = 'Method: client-side heuristic fallback (service not connected)'
+  document.getElementById('textDetails').textContent = `Heuristic raw score: ${heuristic}/40\nNormalized confidence: ${conf}%\nThreshold: 60%\nNote: with the local ONNX ensemble, confidence would be more accurate.`
+
+  // Try local service if available
+  try {
+    const svc = await fetch('http://127.0.0.1:8083/status', { mode: 'cors' }).then(r => r.ok ? r.json() : null)
+    if (svc && svc.token) {
+      const classify = await fetch('http://127.0.0.1:8083/classify', {
+        method: 'POST', headers: { 'X-SlopFilter-Token': svc.token, 'Content-Type': 'text/plain' }, body: text
+      }).then(r => r.ok ? r.json() : null)
+      if (classify) {
+        document.getElementById('textMethod').textContent = 'Method: ' + (classify.method || 'ensemble')
+        document.getElementById('textConf').textContent = classify.confidence + '% confidence'
+        document.getElementById('textMeter').style.width = classify.confidence + '%'
+        document.getElementById('textVerdict').textContent = classify.isSlop ? 'AI Slop Detected' : 'Looks Human'
+        document.getElementById('textVerdict').className = 'badge ' + (classify.isSlop ? 'slop' : 'clean')
+        result.classList.toggle('slop', classify.isSlop)
+        result.classList.toggle('clean', !classify.isSlop)
+        document.getElementById('textMeter').style.background = classify.isSlop ? '#da3633' : '#2ea043'
+      }
+    }
+  } catch (_) {}
+}
+
+async function analyzeImage() {
+  const url = document.getElementById('imgInput').value.trim()
+  if (!url) return
+  const result = document.getElementById('imgResult')
+  result.classList.add('show')
+  // URL pattern check (same logic as classifier)
+  const AI_PATTERNS = [
+    /cdn\.midjourney\.com/i, /oaidalleapiprodscus\.blob\.core\.windows\.net/i,
+    /cdn\.openai\.com/i, /cdn\.leonardo\.ai/i, /firefly\.adobe\.com/i
+  ]
+  const aiUrl = AI_PATTERNS.some(re => re.test(url))
+  let conf = aiUrl ? 100 : 0
+  let isSlop = aiUrl
+  let method = aiUrl ? 'URL forensics (zero-CPU)' : 'No AI URL pattern matched'
+
+  result.classList.toggle('slop', isSlop)
+  result.classList.toggle('clean', !isSlop)
+  document.getElementById('imgVerdict').textContent = isSlop ? 'AI Image Detected' : 'No Strong Signal'
+  document.getElementById('imgVerdict').className = 'badge ' + (isSlop ? 'slop' : 'clean')
+  document.getElementById('imgConf').textContent = conf + '% confidence'
+  document.getElementById('imgMeter').style.width = conf + '%'
+  document.getElementById('imgMeter').style.background = isSlop ? '#da3633' : '#2ea043'
+  document.getElementById('imgMethod').textContent = 'Method: ' + method
+
+  // Try service
+  try {
+    const svc = await fetch('http://127.0.0.1:8083/status', { mode: 'cors' }).then(r => r.ok ? r.json() : null)
+    if (svc && svc.token) {
+      const classify = await fetch('http://127.0.0.1:8083/classify-image', {
+        method: 'POST', headers: { 'X-SlopFilter-Token': svc.token, 'Content-Type': 'text/plain' }, body: url
+      }).then(r => r.ok ? r.json() : null)
+      if (classify) {
+        document.getElementById('imgMethod').textContent = 'Method: ' + (classify.method || 'model')
+        document.getElementById('imgConf').textContent = classify.confidence + '% confidence'
+        document.getElementById('imgMeter').style.width = classify.confidence + '%'
+        document.getElementById('imgVerdict').textContent = classify.isAiImage ? 'AI Image Detected' : 'Looks Real'
+        document.getElementById('imgVerdict').className = 'badge ' + (classify.isAiImage ? 'slop' : 'clean')
+        result.classList.toggle('slop', classify.isAiImage)
+        result.classList.toggle('clean', !classify.isAiImage)
+        document.getElementById('imgMeter').style.background = classify.isAiImage ? '#da3633' : '#2ea043'
+      }
+    }
+  } catch (_) {}
+}
+
+async function pingService() {
+  const pre = document.getElementById('apiStatus')
+  try {
+    const r = await fetch('http://127.0.0.1:8083/status', { mode: 'cors' })
+    const data = await r.json()
+    pre.textContent = JSON.stringify(data, null, 2)
+    document.getElementById('svcStatus').innerHTML = '<span class="dot"></span> Service connected (localhost:8083)'
+  } catch (e) {
+    pre.textContent = 'Service offline. Start with: npm run demo'
+    document.getElementById('svcStatus').innerHTML = '<span class="dot off"></span> Service offline (using client heuristics)'
+  }
+}
+
+async function fetchTokenAndShow() {
+  try {
+    const r = await fetch('http://127.0.0.1:8083/status', { mode: 'cors' })
+    const data = await r.json()
+    const pre = document.getElementById('apiToken')
+    pre.style.display = 'block'
+    pre.textContent = 'Bootstrap Token (64 hex): ' + data.token
+  } catch (e) {
+    alert('Service not running. Run npm run demo first.')
+  }
+}
+
+// Auto-ping once on load
+pingService()
+</script>
+</body>
+</html>
