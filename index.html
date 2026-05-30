@@ -1,0 +1,2882 @@
+<!-- SPDX-FileCopyrightText: 2026 Palak Varshney <palakvarshney23012003@gmail.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SlopBlock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-0:        #050505;
+      --bg-1:        #0A0A0A;
+      --bg-2:        #101010;
+      --bg-3:        #161616;
+      --panel:       rgba(255,255,255,0.03);
+      --panel-hover: rgba(255,255,255,0.05);
+      --border:      rgba(255,255,255,0.08);
+      --border-hi:   rgba(255,255,255,0.14);
+      --text-1:      #FFFFFF;
+      --text-2:      #B4B4B4;
+      --text-3:      #7A7A7A;
+      --text-4:      #444444;
+      --accent:      rgba(255,255,255,0.9);
+      --glow:        rgba(255,255,255,0.06);
+      --radius-sm:   8px;
+      --radius-md:   14px;
+      --radius-lg:   20px;
+      --radius-xl:   24px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background-color: var(--bg-0);
+      color: var(--text-2);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Canvas Background ── */
+    #bgCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    /* Everything stacks above canvas */
+    #appShell {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Title Bar ── */
+    .title-bar {
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+      height: 48px;
+      background: rgba(5,5,5,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+    }
+    .title-bar button { -webkit-app-region: no-drag; }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .logo-icon {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .logo-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text-1);
+    }
+
+    .title-status {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .title-status-text {
+      font-size: 11px;
+      color: var(--text-3);
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #statusDot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-3);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    #statusDot.live {
+      background: #ffffff;
+      box-shadow: 0 0 6px rgba(255,255,255,0.5);
+      animation: pulse-dot 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; box-shadow:0 0 5px rgba(255,255,255,0.5); }
+      50%      { opacity:0.4; box-shadow:none; }
+    }
+
+    .titlebar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .tb-btn {
+      height: 26px;
+      padding: 0 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-3);
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .tb-btn:hover {
+      border-color: var(--border-hi);
+      color: var(--text-2);
+      background: var(--panel);
+    }
+    .tb-btn.icon-btn {
+      width: 26px;
+      padding: 0;
+    }
+    .tb-btn.close-btn:hover {
+      border-color: rgba(255,80,80,0.4);
+      background: rgba(255,80,80,0.08);
+      color: rgba(255,120,120,0.9);
+    }
+
+    /* ── Tab Nav ── */
+    .tab-nav {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      background: var(--bg-0);
+      border-bottom: 1px solid var(--border);
+      gap: 2px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      height: 40px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-3);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      position: relative;
+      top: 1px;
+    }
+    .tab-btn:hover { color: var(--text-2); }
+    .tab-btn.active {
+      color: var(--text-1);
+      border-bottom-color: var(--text-1);
+    }
+    .tab-btn svg { opacity: 0.7; }
+    .tab-btn.active svg { opacity: 1; }
+
+    /* ── Tab panels ── */
+    .tab-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .tab-panel.active { display: flex; }
+
+    /* ── Update banner ── */
+    #updateBanner {
+      display: none;
+      position: fixed;
+      top: 89px; left: 10px; right: 10px;
+      background: var(--bg-2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 40;
+    }
+    #updateBanner.flex { display: flex; }
+    #updateBannerText {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-1);
+      letter-spacing: 0.04em;
+    }
+    #updateProgressWrap { display: flex; align-items: center; gap: 8px; }
+    #updateProgressBar { height: 100%; border-radius: 9999px; background: var(--text-1); transition: width 0.5s; }
+    #updateProgressPct { font-size: 10px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+    #updateRestartBtn {
+      display: none;
+      border: 1px solid var(--border-hi);
+      color: var(--text-1);
+      background: var(--panel);
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    #updateRestartBtn:hover { background: rgba(255,255,255,0.08); }
+    #updateRestartBtn.block { display: block; }
+
+    /* ── Startup Overlay ── */
+    #initOverlay {
+      position: fixed;
+      top: 89px; left: 0; right: 0; bottom: 0;
+      background: var(--bg-0);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity 0.3s;
+    }
+    #overlaySpinner {
+      animation: ring-spin 1s linear infinite;
+    }
+    @keyframes ring-spin { to { transform: rotate(360deg); } }
+    #overlayTitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-1);
+      letter-spacing: 0.1em;
+    }
+    #overlayStatus {
+      font-size: 11px;
+      color: var(--text-3);
+      text-align: center;
+      max-width: 280px;
+      line-height: 1.6;
+    }
+    #overlayRetry {
+      display: none;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      background: var(--panel);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 7px 20px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #overlayRetry:hover { border-color: var(--border-hi); color: var(--text-1); }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      flex-shrink: 0;
+      display: flex;
+      align-items: stretch;
+      padding: 12px 14px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      gap: 0;
+    }
+    .stat-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 4px 8px;
+    }
+    .stat-item + .stat-item {
+      border-left: 1px solid var(--border);
+    }
+    .stat-num {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-1);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 9px;
+      color: var(--text-3);
+      letter-spacing: 0.12em;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .stat-checked {
+      font-size: 8px;
+      color: var(--text-4);
+      font-weight: 400;
+      letter-spacing: 0;
+      margin-left: 2px;
+    }
+    .time-saved-wrap {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-left: 1px solid var(--border);
+    }
+    .time-saved-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-1);
+      font-variant-numeric: tabular-nums;
+    }
+    .time-saved-labels {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .time-saved-labels span {
+      font-size: 7.5px;
+      color: var(--text-4);
+      letter-spacing: 0.12em;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+    .info-icon {
+      font-size: 11px;
+      color: var(--text-4);
+      cursor: default;
+    }
+
+    /* ── Counter animations ── */
+    @keyframes digitIn {
+      from { transform: translateY(35%); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+    .digit-roll { display: inline-block; animation: digitIn 0.28s cubic-bezier(0.4,0,0.2,1) both; }
+
+    @keyframes counterBump {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+    .counter-bump { animation: counterBump 0.26s cubic-bezier(0.4,0,0.2,1) both; }
+
+    /* ── Log header ── */
+    .log-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-0);
+    }
+    .log-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .live-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-1);
+      box-shadow: 0 0 5px rgba(255,255,255,0.5);
+      animation: pulse-dot 2.5s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .log-header-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-3);
+      letter-spacing: 0.18em;
+    }
+    #clearLogBtn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #clearLogBtn:hover { border-color: var(--border-hi); color: var(--text-2); }
+
+    /* ── Log Area ── */
+    #logArea {
+      flex: 1;
+      overflow-y: auto;
+    }
+    #logEmpty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+      text-align: center;
+      padding: 0 32px;
+    }
+    .log-empty-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-4);
+      font-size: 16px;
+    }
+    .log-empty-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-3);
+    }
+    .log-empty-sub {
+      font-size: 11px;
+      color: var(--text-4);
+      line-height: 1.65;
+    }
+
+    @keyframes logSlideIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .log-entry {
+      animation: logSlideIn 0.18s ease both;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding: 7px 14px;
+      transition: background 0.12s;
+    }
+    .log-entry:hover { background: var(--panel-hover); }
+
+    /* ── Filters Tab ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 16px 10px;
+      flex-shrink: 0;
+    }
+    .section-label {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--text-4);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .section-rule {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Feature Cards ── */
+    .feature-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+    }
+    .feature-card:hover { background: var(--panel-hover); }
+    .feature-card.fc-on::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--text-1);
+      border-radius: 0 2px 2px 0;
+    }
+
+    .fc-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .fc-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 4px 7px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      background: var(--bg-2);
+      min-width: 36px;
+      text-align: center;
+      flex-shrink: 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .fc-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-1);
+      margin-bottom: 2px;
+    }
+    .fc-sub {
+      font-size: 11px;
+      color: var(--text-3);
+    }
+
+    /* ── Toggle ── */
+    .toggle-track {
+      position: relative;
+      width: 42px; height: 24px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--bg-2);
+      transition: background 0.2s, border-color 0.2s;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toggle-track.on {
+      background: var(--text-1);
+      border-color: transparent;
+    }
+    .toggle-track.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--text-3);
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background 0.2s;
+      pointer-events: none;
+    }
+    .toggle-track.on .toggle-thumb {
+      transform: translateX(18px);
+      background: var(--bg-0);
+    }
+
+    /* ── Image Model Progress ── */
+    #imgModelProgress {
+      display: none;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    #imgModelProgress.visible { display: block; }
+    .img-progress-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    #imgProgressLabel {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-2);
+    }
+    #imgProgressFraction {
+      font-size: 10px;
+      color: var(--text-3);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .img-progress-track {
+      width: 100%;
+      height: 2px;
+      background: var(--bg-3);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    #imgProgressBar {
+      height: 100%;
+      border-radius: 9999px;
+      background: var(--text-1);
+      transition: width 0.5s;
+    }
+    #imgProgressModel {
+      font-size: 10px;
+      color: var(--text-4);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Image Model Ready ── */
+    #imgModelReady {
+      display: none;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    #imgModelReady.visible { display: flex; align-items: center; gap: 10px; }
+    .ensemble-icon {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border-hi);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--text-1);
+      flex-shrink: 0;
+    }
+    #imgReadyLabel {
+      font-size: 11px;
+      color: var(--text-3);
+    }
+
+    /* ── Proxy info text ── */
+    .proxy-info-text {
+      padding: 12px 16px;
+      font-size: 11px;
+      color: var(--text-3);
+      line-height: 1.65;
+    }
+    .proxy-info-text strong { color: var(--text-2); font-weight: 500; }
+
+    /* ── Bypass Tab ── */
+    .bypass-input-wrap {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 12px;
+      flex-shrink: 0;
+    }
+    .mono-input {
+      flex: 1;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-1);
+      outline: none;
+      transition: border-color 0.2s;
+      user-select: text;
+    }
+    .mono-input::placeholder { color: var(--text-4); }
+    .mono-input:focus { border-color: var(--border-hi); }
+    .add-btn {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 8px 14px;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .add-btn:hover {
+      border-color: var(--border-hi);
+      color: var(--text-1);
+      background: rgba(255,255,255,0.06);
+    }
+    .bypass-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+    }
+    .bypass-list-item .hostname {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-2);
+    }
+    .bypass-remove-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-4);
+      font-size: 14px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 2px;
+      transition: color 0.15s;
+    }
+    .bypass-remove-btn:hover { color: rgba(255,100,100,0.8); }
+
+    /* ── Extension Tab ── */
+    .ext-card {
+      margin: 14px 14px 0;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 18px;
+    }
+    .ext-card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .ext-icon-box {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-md);
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      color: var(--text-2);
+    }
+    .ext-meta { flex: 1; min-width: 0; }
+    .ext-meta-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-4);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .ext-meta-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-1);
+      margin-bottom: 6px;
+    }
+    .ext-meta-desc {
+      font-size: 11px;
+      color: var(--text-3);
+      line-height: 1.6;
+    }
+    #extBadge {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      padding: 4px 9px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #extBadge.installed {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text-2);
+    }
+    .ext-actions {
+      display: flex;
+      gap: 10px;
+    }
+    #installExtBtn {
+      flex: 1;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-2);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 11px 0;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    #installExtBtn:hover {
+      background: rgba(255,255,255,0.07);
+      border-color: var(--border-hi);
+      color: var(--text-1);
+    }
+    #installExtBtn:active { transform: scale(0.98); }
+    #openFolderBtn {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-3);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 11px 14px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #openFolderBtn:hover { border-color: var(--border-hi); color: var(--text-2); }
+
+    /* ── Footer ── */
+    .ext-footer {
+      padding: 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .footer-link {
+      font-size: 11px;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .footer-link:hover { color: var(--text-2); }
+    .footer-dot {
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: var(--text-4);
+    }
+
+    /* ── Modals ── */
+    #installModal, #aboutModal, #privacyModal, #termsModal, #settingsModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+    }
+    #installModal.open, #aboutModal.open, #privacyModal.open,
+    #termsModal.open, #settingsModal.open { display: flex; }
+
+    .modal-panel {
+      background: var(--bg-1);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+      padding: 22px;
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .modal-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: 0.08em;
+    }
+    .modal-close {
+      width: 26px; height: 26px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-3);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .modal-close:hover { border-color: var(--border-hi); color: var(--text-1); }
+
+    /* Step progress */
+    .step { display: none; }
+    .step.active { display: block; }
+    .steps-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .step-dot {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-3);
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .step-dot.active { background: var(--text-1); border-color: var(--text-1); color: var(--bg-0); }
+    .step-dot.done   { background: var(--bg-3); border-color: var(--border-hi); color: var(--text-2); }
+    .step-line {
+      flex: 1; height: 1px;
+      background: var(--border);
+      transition: background 0.2s;
+    }
+    .step-line.active { background: var(--border-hi); }
+
+    .url-copy-row {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .url-copy-row span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .copy-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-3);
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    .copy-btn:hover { color: var(--text-1); }
+
+    /* Settings modal rows */
+    .settings-section-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-4);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+    .settings-row-title { font-size: 12px; color: var(--text-1); font-weight: 500; }
+    .settings-row-sub   { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+    .settings-action-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-3);
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 9px;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: border-color 0.2s, color 0.2s;
+      margin-bottom: 6px;
+    }
+    .settings-action-btn:hover { border-color: var(--border-hi); color: var(--text-2); }
+    .settings-action-btn:disabled { opacity: 0.4; cursor: default; }
+    .config-slider {
+      width: 100%;
+      margin: 0;
+      accent-color: var(--accent, #7c9cff);
+      cursor: pointer;
+    }
+    .config-slider-val {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-2);
+      font-variant-numeric: tabular-nums;
+    }
+    .maintenance-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    /* Modal content text */
+    .modal-body {
+      font-size: 11px;
+      color: var(--text-3);
+      line-height: 1.7;
+      overflow-y: auto;
+      max-height: 70vh;
+    }
+    .modal-body h3 {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-4);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin: 14px 0 6px;
+    }
+    .modal-body p { margin-bottom: 8px; }
+    .modal-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 12px 0;
+    }
+    .modal-highlight {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-2);
+      text-align: center;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    .modal-list-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .modal-list-item .dot {
+      color: var(--text-4);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .model-row {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+    .model-row-title  { font-size: 11px; color: var(--text-2); font-weight: 500; margin-bottom: 3px; }
+    .model-row-id     { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text-3); margin-bottom: 3px; }
+    .model-row-lic    { font-size: 9px; color: var(--text-4); }
+    .built-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .built-item {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+    }
+    .built-item .name { color: var(--text-2); font-weight: 500; }
+    .built-item .lic  { color: var(--text-4); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+    /* ── Suggest-bypass alert styling (dynamically created) ── */
+    .bypass-alert-card {
+      background: var(--bg-1);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      width: 330px;
+      box-shadow: 0 32px 64px rgba(0,0,0,0.7);
+      animation: alertIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes alertIn {
+      from { transform: scale(0.95) translateY(8px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    /* ── DIM/VIV mode ── */
+    body.vivid { filter: brightness(1.2); }
+
+    /* ── Wizard styles ── */
+    .wizard-step-title {
+      font-size: 13px; font-weight: 700; color: var(--text-1);
+      text-align: center; margin-bottom: 16px; letter-spacing: 0.02em;
+    }
+    .wizard-browser-mockup {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius-md); overflow: hidden;
+      margin-bottom: 14px; animation: wizardFadeIn 0.4s ease both;
+    }
+    @keyframes wizardFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .wizard-browser-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; background: var(--bg-3);
+      border-bottom: 1px solid var(--border);
+    }
+    .wizard-browser-dots { display: flex; gap: 4px; flex-shrink: 0; }
+    .wizard-browser-dots span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text-4);
+    }
+    .wizard-browser-dots span:nth-child(1) { background: rgba(255,100,100,0.6); }
+    .wizard-browser-dots span:nth-child(2) { background: rgba(255,180,60,0.6); }
+    .wizard-browser-dots span:nth-child(3) { background: rgba(80,200,100,0.6); }
+    .wizard-browser-url {
+      flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      color: var(--text-3); background: var(--bg-0); border-radius: 4px;
+      padding: 3px 8px; border: 1px solid var(--border);
+      white-space: nowrap; overflow: hidden;
+    }
+    .wizard-browser-url.typing::after {
+      content: '|'; animation: wizardCursor 0.8s step-end infinite;
+      color: var(--text-1);
+    }
+    @keyframes wizardCursor {
+      0%, 100% { opacity: 1; } 50% { opacity: 0; }
+    }
+    .wizard-browser-body {
+      padding: 24px 16px; display: flex; flex-direction: column;
+      align-items: center; gap: 10px; min-height: 110px; justify-content: center;
+    }
+    .wizard-extensions-icon {
+      font-size: 32px; opacity: 0.8;
+      animation: wizardBounce 2s ease-in-out infinite;
+    }
+    @keyframes wizardBounce {
+      0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); }
+    }
+    .wizard-extensions-label { font-size: 11px; color: var(--text-3); font-weight: 500; }
+    .wizard-devmode-body { align-items: flex-end; padding: 16px; }
+    .wizard-devmode-row {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; background: var(--bg-0); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 12px;
+    }
+    .wizard-devmode-label { font-size: 11px; color: var(--text-2); font-weight: 500; }
+    .wizard-toggle-track {
+      width: 36px; height: 20px; border-radius: 10px;
+      background: var(--bg-3); border: 1px solid var(--border);
+      position: relative; cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .wizard-toggle-track.on {
+      background: rgba(80,200,100,0.3); border-color: rgba(80,200,100,0.5);
+    }
+    .wizard-toggle-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--text-3); position: absolute; top: 2px; left: 2px;
+      transition: left 0.3s, background 0.3s;
+    }
+    .wizard-toggle-track.on .wizard-toggle-thumb {
+      left: 18px; background: rgba(80,200,100,0.9);
+    }
+    .wizard-load-body { padding: 16px; gap: 12px; }
+    .wizard-load-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--bg-0); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 14px;
+      font-size: 11px; color: var(--text-2); font-weight: 500; font-family: inherit;
+      animation: wizardPulseBtn 2s ease-in-out infinite;
+    }
+    @keyframes wizardPulseBtn {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+      50% { box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
+    }
+    .wizard-folder-select {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-0); border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm); padding: 8px 12px; width: 100%;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    .wizard-folder-select.show { opacity: 1; transform: translateY(0); }
+    .wizard-folder-icon { font-size: 16px; }
+    .wizard-folder-path {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .wizard-tip {
+      font-size: 10px; color: var(--text-4); text-align: center;
+      line-height: 1.5; margin-bottom: 16px; padding: 0 8px;
+    }
+    .wizard-tip code {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      background: var(--bg-2); padding: 1px 5px; border-radius: 4px;
+      border: 1px solid var(--border); color: var(--text-3);
+    }
+    .wizard-next-btn, .wizard-done-btn {
+      width: 100%; background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border-hi); border-radius: var(--radius-sm);
+      color: var(--text-1); font-family: inherit; font-size: 11px;
+      font-weight: 600; padding: 10px; cursor: pointer;
+      letter-spacing: 0.08em;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .wizard-next-btn:hover, .wizard-done-btn:hover { background: rgba(255,255,255,0.12); }
+    .wizard-next-btn:active, .wizard-done-btn:active { transform: scale(0.98); }
+    .wizard-success-title { color: rgba(80,200,100,0.9); }
+    .wizard-success-icon {
+      display: flex; justify-content: center; margin-bottom: 14px;
+      color: rgba(80,200,100,0.8);
+      animation: wizardCheckIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes wizardCheckIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .wizard-success-text {
+      font-size: 11px; color: var(--text-3); text-align: center;
+      line-height: 1.6; margin-bottom: 20px;
+    }
+    .wizard-screenshot-wrap {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius-md); overflow: hidden;
+      margin-bottom: 14px; animation: wizardFadeIn 0.4s ease both;
+      max-height: 260px; display: flex; align-items: center; justify-content: center;
+    }
+    .wizard-screenshot-wrap img {
+      max-width: 100%; max-height: 260px; object-fit: contain;
+      display: block;
+    }
+    .wizard-screenshot-caption {
+      font-size: 10px; color: var(--text-4); text-align: center;
+      margin-top: -8px; margin-bottom: 14px; line-height: 1.5;
+    }
+    .wizard-screenshot-pair {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .wizard-screenshot-pair .wizard-screenshot-wrap { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Particle mesh canvas -->
+  <canvas id="bgCanvas"></canvas>
+
+  <div id="appShell">
+
+    <!-- Title bar -->
+    <div class="title-bar">
+      <div class="logo-wrap">
+        <!-- SlopBlock logo SVG -->
+        <svg class="logo-icon" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="20" height="20" rx="5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+          <path d="M6 8 L11 5 L16 8 L16 14 L11 17 L6 14 Z" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+          <circle cx="11" cy="11" r="2" fill="rgba(255,255,255,0.8)"/>
+        </svg>
+        <span class="logo-name">SLOPBLOCK</span>
+      </div>
+      <div class="title-status">
+        <span class="w-1.5 h-1.5 rounded-full bg-g shrink-0" id="statusDot"></span>
+        <span class="title-status-text" id="statusText">Initializing…</span>
+      </div>
+      <div class="titlebar-actions">
+        <button id="themeToggle" class="tb-btn" title="Toggle brightness">DIM</button>
+        <button id="settingsBtn" class="tb-btn icon-btn" title="Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button onclick="window.electronAPI.send('window-minimize')" class="tb-btn icon-btn" title="Minimise">
+          <svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="1.5" rx="0.75" fill="currentColor"/></svg>
+        </button>
+        <button onclick="window.electronAPI.send('window-close')" class="tb-btn icon-btn close-btn" title="Close">
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <path d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab nav -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="monitor">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Monitor
+      </button>
+      <button class="tab-btn" data-tab="filters">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filters
+      </button>
+      <button id="bypassTabBtn" class="tab-btn hidden" data-tab="bypass">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Bypass
+      </button>
+      <button class="tab-btn" data-tab="extension">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+        Extension
+      </button>
+    </div>
+
+    <!-- Update banner -->
+    <div id="updateBanner">
+      <span id="updateBannerText">Update available</span>
+      <div id="updateProgressWrap" style="display:none; align-items:center; gap:8px;">
+        <div style="width:80px; background:var(--bg-3); border:1px solid var(--border); border-radius:9999px; height:3px; overflow:hidden;">
+          <div id="updateProgressBar" style="width:0%"></div>
+        </div>
+        <span id="updateProgressPct">0%</span>
+      </div>
+      <button id="updateRestartBtn">RESTART &amp; UPDATE</button>
+    </div>
+
+    <!-- Startup overlay -->
+    <div id="initOverlay">
+      <svg id="overlaySpinner" viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="22" cy="22" r="17" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="2.5"/>
+        <circle cx="22" cy="22" r="17" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-dasharray="28 79" stroke-linecap="round"/>
+      </svg>
+      <div id="overlayTitle">STARTING UP</div>
+      <div id="overlayStatus">Starting up…</div>
+      <button id="overlayRetry">RETRY</button>
+    </div>
+
+    <!-- ── MONITOR TAB ── -->
+    <div id="tab-monitor" class="tab-panel active">
+
+      <!-- Stats strip -->
+      <div class="stats-strip">
+        <div class="stat-item">
+          <span class="stat-num" id="slop-counter">0</span>
+          <span class="stat-label">TEXT <span class="stat-checked" id="text-checked">(0)</span></span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="images-counter">0</span>
+          <span class="stat-label">IMG <span class="stat-checked" id="images-checked">(0)</span></span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="youtube-counter">0</span>
+          <span class="stat-label">YT <span class="stat-checked" id="youtube-checked">(0)</span></span>
+        </div>
+        <div class="time-saved-wrap">
+          <span class="time-saved-val" id="time-saved-value">—</span>
+          <div class="time-saved-labels">
+            <span>TIME</span>
+            <span>SAVED</span>
+          </div>
+          <span class="info-icon" title="5s/text · 50ms/ad · 1s/image · 30s/video">ⓘ</span>
+        </div>
+      </div>
+
+      <!-- Log header -->
+      <div class="log-header">
+        <div class="log-header-left">
+          <div class="live-dot"></div>
+          <span class="log-header-title">CLASSIFICATION LOG</span>
+        </div>
+        <button id="clearLogBtn">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Clear
+        </button>
+      </div>
+
+      <!-- Log entries -->
+      <div id="logArea">
+        <div id="logEmpty">
+          <div class="log-empty-icon">◈</div>
+          <div class="log-empty-title">No classifications yet</div>
+          <div class="log-empty-sub">Browse the web — text, images, ads and YouTube AI<br>disclosure events will appear here in real time.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── FILTERS TAB ── -->
+    <div id="tab-filters" class="tab-panel" style="overflow-y:auto;">
+
+      <div class="section-header">
+        <span class="section-label">Active Filters</span>
+        <div class="section-rule"></div>
+      </div>
+
+      <!-- AI Text Filter -->
+      <div id="mainCard" class="feature-card fc-on">
+        <div class="fc-left">
+          <span class="fc-badge">TXT</span>
+          <div>
+            <div class="fc-title">AI Text Filter</div>
+            <div class="fc-sub" id="mainSubtitle">2-model text ensemble</div>
+          </div>
+        </div>
+        <div id="mainTrack" class="toggle-track on"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <!-- YouTube AI Filter -->
+      <div class="feature-card fc-on">
+        <div class="fc-left">
+          <span class="fc-badge">YT</span>
+          <div>
+            <div class="fc-title">YouTube AI Filter</div>
+            <div class="fc-sub" id="ytSubtitle">Warns when creator discloses AI-generated content</div>
+          </div>
+        </div>
+        <div id="ytTrack" class="toggle-track on"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <!-- Image Detection -->
+      <div id="imageCard" class="feature-card">
+        <div class="fc-left">
+          <span class="fc-badge">IMG</span>
+          <div>
+            <div class="fc-title">AI Image Detection</div>
+            <div class="fc-sub" id="imgSubtitle">Install extension to enable</div>
+          </div>
+        </div>
+        <div id="imageTrack" class="toggle-track disabled"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <!-- Video Detection -->
+      <div id="videoCard" class="feature-card">
+        <div class="fc-left">
+          <span class="fc-badge">VID</span>
+          <div>
+            <div class="fc-title">AI Video Detection</div>
+            <div class="fc-sub" id="videoSubtitle">CLIP encoder + linear probe</div>
+          </div>
+        </div>
+        <div id="videoTrack" class="toggle-track disabled"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <!-- Image model progress -->
+      <div id="imgModelProgress">
+        <div class="img-progress-top">
+          <span id="imgProgressLabel">Loading image ensemble…</span>
+          <span id="imgProgressFraction">0 / 3</span>
+        </div>
+        <div class="img-progress-track">
+          <div id="imgProgressBar" style="width:0%"></div>
+        </div>
+        <div id="imgProgressModel"></div>
+      </div>
+
+      <!-- Image model ready -->
+      <div id="imgModelReady">
+        <div class="ensemble-icon">✓</div>
+        <div>
+          <div style="font-size:12px; font-weight:600; color:var(--text-1);">ENSEMBLE READY</div>
+          <div id="imgReadyLabel" class="fc-sub">3 / 3 models active</div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:16px;"></div>
+
+      <!-- Enhanced Mode -->
+      <div class="section-header" style="border-top: 1px solid var(--border);">
+        <span class="section-label">Enhanced Mode</span>
+        <div class="section-rule"></div>
+      </div>
+
+      <div id="proxyCard" class="feature-card fc-proxy">
+        <div class="fc-left">
+          <span class="fc-badge">PRX</span>
+          <div>
+            <div class="fc-title">Local HTTPS Proxy</div>
+            <div class="fc-sub" id="proxySubtitle">Off — extension-only mode active</div>
+          </div>
+        </div>
+        <div id="proxyTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <div class="proxy-info-text">
+        Runs a local HTTPS proxy on this machine. Routes traffic from <strong>all browsers and apps</strong> through SlopBlock — enabling system-wide filtering beyond Chrome. Installs a <strong>local CA certificate</strong>. Not required for extension-based filtering. Recommended for power users.
+      </div>
+
+    </div>
+
+    <!-- ── BYPASS TAB ── -->
+    <div id="tab-bypass" class="tab-panel" style="flex-direction:column; overflow:hidden;">
+
+      <div class="section-header">
+        <div>
+          <div style="font-size:13px; font-weight:600; color:var(--text-1); margin-bottom:2px;">Bypass Domains</div>
+          <div style="font-size:11px; color:var(--text-3);">These hosts connect directly, bypassing the proxy.</div>
+        </div>
+      </div>
+
+      <div class="bypass-input-wrap">
+        <input id="bypassAddInput" type="text" placeholder="e.g. app.example.com" class="mono-input" />
+        <button id="bypassAddBtn" class="add-btn">ADD</button>
+      </div>
+
+      <div style="flex:1; min-height:0; overflow-y:auto; padding:0 16px 8px;">
+        <div id="bypassInlineList" style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:11px; color:var(--text-4); text-align:center; padding:20px 0;">No bypass domains added yet.</div>
+        </div>
+      </div>
+
+      <!-- Trusted Sources -->
+      <div style="flex-shrink:0; padding:0 16px; border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+        <div style="font-size:13px; font-weight:600; color:var(--text-1); margin-bottom:2px;">Trusted Sources</div>
+        <div style="font-size:11px; color:var(--text-3); margin-bottom:10px;">URLs starting with these prefixes are never filtered.</div>
+        <div class="bypass-input-wrap" style="padding:0 0 12px;">
+          <input id="trustedAddInput" type="text" placeholder="e.g. https://example.com/blog/" class="mono-input" />
+          <button id="trustedAddBtn" class="add-btn">ADD</button>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:0; overflow-y:auto; padding:0 16px 12px;">
+        <div id="trustedInlineList" style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:11px; color:var(--text-4); text-align:center; padding:12px 0;">No trusted sources added yet.</div>
+        </div>
+      </div>
+
+      <div style="flex-shrink:0; padding:12px 16px; border-top:1px solid var(--border);">
+        <span style="color:var(--text-2); font-size:11px; font-weight:500;">How it works: </span>
+        <span style="font-size:11px; color:var(--text-3);">When an app rejects the proxy certificate, SlopBlock detects it and prompts you to add the host here. That host then connects directly.</span>
+      </div>
+    </div>
+
+    <!-- ── EXTENSION TAB ── -->
+    <div id="tab-extension" class="tab-panel" style="overflow-y:auto;">
+
+      <div class="section-header">
+        <span class="section-label">Browser Extension</span>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="ext-card">
+        <div class="ext-card-top">
+          <div class="ext-icon-box">🧩</div>
+          <div class="ext-meta">
+            <div class="ext-meta-label">Extension</div>
+            <div class="ext-meta-title">Browser Extension</div>
+            <div class="ext-meta-desc" id="extSubtitle">Enables social media filtering &amp; AI image detection across your browsing experience.</div>
+          </div>
+          <span id="extBadge">NOT INSTALLED</span>
+        </div>
+        <div class="ext-actions">
+          <button id="installExtBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.47"/></svg>
+            INSTALL EXTENSION
+          </button>
+          <button id="openFolderBtn" title="Open extension folder in Explorer" style="display:none;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            OPEN DIRECTORY
+          </button>
+        </div>
+      </div>
+
+      <!-- Particle BG hint area -->
+      <div style="flex:1; min-height:100px;"></div>
+
+      <!-- Footer -->
+      <div class="ext-footer">
+        <span class="footer-link" id="privacyLink">Privacy Policy</span>
+        <div class="footer-dot"></div>
+        <span class="footer-link" id="termsLink">Terms of Service</span>
+        <div class="footer-dot"></div>
+        <span class="footer-link" id="aboutLink">About SlopBlock</span>
+      </div>
+    </div>
+
+  </div><!-- /appShell -->
+
+  <!-- ── Install Modal ── -->
+  <div id="installModal">
+    <div class="modal-panel" style="width:420px; margin:0 16px;">
+      <div class="modal-header">
+        <div class="modal-title">LOAD LOCAL EXTENSION</div>
+        <button id="modalClose" class="modal-close">✕</button>
+      </div>
+
+      <div class="steps-indicator">
+        <div class="step-dot active" id="dot1">1</div>
+        <div class="step-line" id="line1"></div>
+        <div class="step-dot" id="dot2">2</div>
+        <div class="step-line" id="line2"></div>
+        <div class="step-dot" id="dot3">3</div>
+        <div class="step-line" id="line3"></div>
+        <div class="step-dot" id="dot4">4</div>
+        <div class="step-line" id="line4"></div>
+        <div class="step-dot" id="dot5">✓</div>
+      </div>
+
+      <!-- Step 1: Open extensions page -->
+      <div class="step active" id="step1">
+        <div class="wizard-step-title">Open your browser's extension page</div>
+        <div class="wizard-browser-mockup">
+          <div class="wizard-browser-bar">
+            <div class="wizard-browser-dots"><span></span><span></span><span></span></div>
+            <div class="wizard-browser-url" id="wizardUrlText">chrome://extensions</div>
+          </div>
+          <div class="wizard-browser-body">
+            <div class="wizard-extensions-icon">🧩</div>
+            <div class="wizard-extensions-label">Extensions</div>
+          </div>
+        </div>
+        <div class="wizard-tip">Type <code>chrome://extensions</code> or <code>brave://extensions</code> in your browser's address bar</div>
+        <button class="wizard-next-btn" id="wizardNext1">NEXT →</button>
+      </div>
+
+      <!-- Step 2: Enable Developer mode -->
+      <div class="step" id="step2">
+        <div class="wizard-step-title">Enable Developer mode</div>
+        <div class="wizard-screenshot-wrap">
+          <img src="processes/step1-developer-mode.png" alt="Developer mode toggle">
+        </div>
+        <div class="wizard-tip">Toggle the <strong>Developer mode</strong> switch in the top-right corner of the extensions page</div>
+        <button class="wizard-next-btn" id="wizardNext2">NEXT →</button>
+      </div>
+
+      <!-- Step 3: Load unpacked -->
+      <div class="step" id="step3">
+        <div class="wizard-step-title">Click Load unpacked</div>
+        <div class="wizard-screenshot-wrap">
+          <img src="processes/step2-load-unpacked.png" alt="Load unpacked button">
+        </div>
+        <div class="wizard-tip">Click the <strong>Load unpacked</strong> button that appears after enabling Developer mode</div>
+        <button class="wizard-next-btn" id="wizardNext3">NEXT →</button>
+      </div>
+
+      <!-- Step 4: Select folder -->
+      <div class="step" id="step4">
+        <div class="wizard-step-title">Select the extension folder</div>
+        <div class="wizard-screenshot-wrap">
+          <img src="processes/step3-select-folder.png" alt="Select extension folder">
+        </div>
+        <div class="wizard-tip">In the file picker, navigate to this repo and select the <code>extension</code> folder, then click <strong>Select Folder</strong></div>
+        <button class="wizard-next-btn" id="wizardNext4">NEXT →</button>
+      </div>
+
+      <!-- Step 5: Success -->
+      <div class="step" id="step5">
+        <div class="wizard-step-title wizard-success-title">Extension loaded!</div>
+        <div class="wizard-success-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="wizard-success-text">
+          SlopBlock extension is now active in your browser.<br>
+          Social media filtering &amp; AI image detection are ready.
+        </div>
+        <button class="wizard-done-btn" id="wizardDoneBtn">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── About Modal ── -->
+  <div id="aboutModal">
+    <div class="modal-panel" style="width:400px; margin:0 16px;">
+      <div class="modal-header">
+        <div class="modal-title">ABOUT SLOPBLOCK</div>
+        <button id="aboutModalClose" class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center; padding:8px 0 14px;">
+          <div style="font-size:24px; margin-bottom:8px; opacity:0.6;">◈</div>
+          <div style="font-size:15px; font-weight:700; color:var(--text-1); margin-bottom:8px;">Keep the internet human.</div>
+          <p>We built SlopBlock because the web is better when it's made by real people — with their quirks, mistakes, and genuine perspectives.</p>
+        </div>
+        <div class="modal-divider"></div>
+        <h3>What it does</h3>
+        <div class="modal-list-item"><span class="dot">◈</span><span>Detects AI-generated text with a 2-model on-device ensemble</span></div>
+        <div class="modal-list-item"><span class="dot">◈</span><span>Identifies AI-generated images using a 3-model on-device ensemble</span></div>
+        <div class="modal-list-item"><span class="dot">◈</span><span>Flags AI video via CLIP frame probe, captions, and metadata</span></div>
+        <div class="modal-list-item"><span class="dot">◈</span><span>Flags YouTube videos where the creator declared AI-generated content</span></div>
+        <div class="modal-list-item"><span class="dot">◈</span><span>Blocks ads and trackers at the network level via a local proxy</span></div>
+        <div class="modal-list-item"><span class="dot">◈</span><span>Runs entirely on your device — no cloud, no tracking, no subscriptions</span></div>
+        <div class="modal-divider"></div>
+        <h3>How it works</h3>
+        <p>A local HTTPS proxy intercepts browser traffic and runs on-device AI models to detect and hide AI content. A companion extension extends this to social feeds. All inference stays on your machine.</p>
+        <div style="font-size:10px; color:var(--text-4); text-align:center; margin-top:14px;">SlopBlock v<span id="currentVersion">—</span> · Local-only · No accounts · No telemetry</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Privacy Modal ── -->
+  <div id="privacyModal">
+    <div class="modal-panel" style="width:400px; margin:0 16px;">
+      <div class="modal-header">
+        <div class="modal-title">PRIVACY POLICY</div>
+        <button id="privacyModalClose" class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-highlight">WE COLLECT NOTHING. EVER.</div>
+        <h3>What we process</h3>
+        <p>Text and images from pages you visit are analysed locally by on-device ML models. This never leaves your machine.</p>
+        <div class="modal-divider"></div>
+        <h3>What we don't do</h3>
+        <div class="modal-list-item"><span class="dot" style="color:rgba(255,80,80,0.7);">✕</span><span>Collect or store your browsing data</span></div>
+        <div class="modal-list-item"><span class="dot" style="color:rgba(255,80,80,0.7);">✕</span><span>Track which sites you visit</span></div>
+        <div class="modal-list-item"><span class="dot" style="color:rgba(255,80,80,0.7);">✕</span><span>Send telemetry or analytics anywhere</span></div>
+        <div class="modal-list-item"><span class="dot" style="color:rgba(255,80,80,0.7);">✕</span><span>Operate any servers or cloud infrastructure</span></div>
+        <div class="modal-list-item"><span class="dot" style="color:rgba(255,80,80,0.7);">✕</span><span>Sell or share your data with anyone</span></div>
+        <div class="modal-divider"></div>
+        <h3>The local proxy</h3>
+        <p>SlopBlock installs a local CA and runs a local HTTPS proxy on port 8081. All interception is entirely local — no traffic is routed through any external server.</p>
+        <div class="modal-divider"></div>
+        <h3>The browser extension</h3>
+        <p>The companion extension communicates only with the local app at 127.0.0.1:8083. It never contacts any external URL.</p>
+        <div style="font-size:10px; color:var(--text-4); text-align:center; margin-top:14px;">Last updated April 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Terms Modal ── -->
+  <div id="termsModal">
+    <div class="modal-panel" style="width:400px; margin:0 16px;">
+      <div class="modal-header">
+        <div class="modal-title">TERMS &amp; ATTRIBUTION</div>
+        <button id="termsModalClose" class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <h3>Terms of use</h3>
+        <p>SlopBlock is provided as-is for personal, non-commercial use. The app modifies your system proxy settings and installs a local CA certificate. Uninstalling restores your original proxy settings.</p>
+        <div class="modal-divider"></div>
+        <h3>Open-source models</h3>
+        <div class="model-row">
+          <div class="model-row-title">Text detection — Model 1</div>
+          <div class="model-row-id" id="textModelLink" style="cursor:pointer;">onnx-community/tmr-ai-text-detector-ONNX</div>
+          <div class="model-row-lic">Apache 2.0</div>
+        </div>
+        <div class="model-row">
+          <div class="model-row-title">Text detection — Model 2</div>
+          <div class="model-row-id" id="textModel2Link" style="cursor:pointer;">onnx-community/e5-small-lora-ai-generated-detector-ONNX</div>
+          <div class="model-row-lic">Apache 2.0 · E5-small LoRA classifier</div>
+        </div>
+        <div class="model-row">
+          <div class="model-row-title">Image detection — Model A</div>
+          <div class="model-row-id" id="imgModelALink" style="cursor:pointer;">yaya36095/ai-source-detector</div>
+          <div class="model-row-lic">CC-BY 4.0 · Multi-label ViT-Base classifier</div>
+        </div>
+        <div class="model-row">
+          <div class="model-row-title">Image detection — Model B</div>
+          <div class="model-row-id" id="imgModelBLink" style="cursor:pointer;">onnx-community/SMOGY-Ai-images-detector-ONNX</div>
+          <div class="model-row-lic">Apache 2.0 · Swin Transformer</div>
+        </div>
+        <div class="model-row">
+          <div class="model-row-title">Image detection — Model C</div>
+          <div class="model-row-id" id="imgModelCLink" style="cursor:pointer;">onnx-community/Deep-Fake-Detector-v2-Model-ONNX</div>
+          <div class="model-row-lic">Apache 2.0 · ViT-Base deepfake detector</div>
+        </div>
+        <div class="model-row">
+          <div class="model-row-title">Video detection — CLIP + probe</div>
+          <div class="model-row-id" id="videoModelLink" style="cursor:pointer;">Xenova/clip-vit-base-patch32 + clip_video_probe.json</div>
+          <div class="model-row-lic">MIT · Trained linear probe on browser-aligned frames</div>
+        </div>
+        <div class="modal-divider"></div>
+        <h3>Built with</h3>
+        <div class="built-grid">
+          <div class="built-item"><span class="name">Electron</span><span class="lic">MIT</span></div>
+          <div class="built-item"><span class="name">mockttp</span><span class="lic">Apache 2.0</span></div>
+          <div class="built-item"><span class="name">@hf/transformers</span><span class="lic">Apache 2.0</span></div>
+          <div class="built-item"><span class="name">Tailwind CSS</span><span class="lic">MIT</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings Modal ── -->
+  <div id="settingsModal">
+    <div class="modal-panel" style="width:320px; margin:0 16px;">
+      <div class="modal-header">
+        <div class="modal-title">SETTINGS</div>
+        <button id="settingsModalClose" class="modal-close">✕</button>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div class="settings-section-label">System</div>
+        <div class="settings-row">
+          <div class="settings-row-title">Launch at Windows startup</div>
+          <div id="stgLaunchTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">Close to tray</div>
+            <div class="settings-row-sub">Takes effect immediately</div>
+          </div>
+          <div id="stgTrayTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+        </div>
+        <button id="checkUpdatesBtn" class="settings-action-btn">CHECK FOR UPDATES</button>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div class="settings-section-label">Maintenance</div>
+        <div class="maintenance-grid">
+          <button id="resetBtn" class="settings-action-btn" style="margin-bottom:0;">RESET</button>
+          <button id="certBtn" class="settings-action-btn" style="margin-bottom:0;">CERT</button>
+          <button id="debugLogBtn" class="settings-action-btn" style="margin-bottom:0;">LOG</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="settings-section-label">Startup defaults</div>
+        <div style="font-size:10px; color:var(--text-4); margin-bottom:8px;">Feature state when the app launches</div>
+        <div class="settings-row">
+          <div class="settings-row-title">Text filter</div>
+          <div id="stgTextTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div class="settings-row-title">Image detection</div>
+            <div id="stgImageTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+          </div>
+          <div id="stgImageNote" class="hidden" style="font-size:10px; color:var(--text-4);"></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-title">YouTube filter</div>
+          <div id="stgYtTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-title">Video detection</div>
+          <div id="stgVideoTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="settings-section-label">Video detection</div>
+        <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div class="settings-row-title">Minimum AI confidence</div>
+            <span id="stgVideoThresholdVal" class="config-slider-val">55%</span>
+          </div>
+          <input id="stgVideoThreshold" class="config-slider" type="range" min="10" max="95" step="1" value="55" />
+          <div class="settings-row-sub" style="margin-top:0;">Videos scoring above this % are flagged as AI. Lower catches more; higher reduces false positives.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ── Canvas 2D Particle Terrain (perspective projection) ──────────────────
+// Zero external dependencies — manual 3D → 2D projection with depth fog.
+(function () {
+  const canvas = document.getElementById('bgCanvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, CX, CY;
+
+  // ── Pre-render a soft glow sprite ─────────────────────────────────────
+  const SP = 40;  // sprite canvas size
+  const sprite = document.createElement('canvas');
+  sprite.width = sprite.height = SP;
+  const sc = sprite.getContext('2d');
+  const sg = sc.createRadialGradient(SP/2, SP/2, 0, SP/2, SP/2, SP/2);
+  sg.addColorStop(0,    'rgba(255,255,255,1)');
+  sg.addColorStop(0.30, 'rgba(255,255,255,0.50)');
+  sg.addColorStop(0.65, 'rgba(255,255,255,0.10)');
+  sg.addColorStop(1,    'rgba(255,255,255,0)');
+  sc.fillStyle = sg;
+  sc.fillRect(0, 0, SP, SP);
+
+  // Larger diffuse sprite for ridge bloom effect
+  const SPL = 64;
+  const spriteL = document.createElement('canvas');
+  spriteL.width = spriteL.height = SPL;
+  const sl = spriteL.getContext('2d');
+  const slg = sl.createRadialGradient(SPL/2, SPL/2, 0, SPL/2, SPL/2, SPL/2);
+  slg.addColorStop(0,    'rgba(255,255,255,0.9)');
+  slg.addColorStop(0.40, 'rgba(255,255,255,0.20)');
+  slg.addColorStop(0.75, 'rgba(255,255,255,0.04)');
+  slg.addColorStop(1,    'rgba(255,255,255,0)');
+  sl.fillStyle = slg;
+  sl.fillRect(0, 0, SPL, SPL);
+
+  // ── Grid parameters ───────────────────────────────────────────────────
+  const COLS  = 88;
+  const ROWS  = 58;
+  const SPACE = 0.36;   // world-units
+  const WW    = (COLS - 1) * SPACE;
+  const DD    = (ROWS - 1) * SPACE;
+  const N     = COLS * ROWS;
+
+  // Pre-compute fixed XZ positions
+  const BX = new Float32Array(N);
+  const BZ = new Float32Array(N);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const i = r * COLS + c;
+      BX[i]   = (c / (COLS - 1) - 0.5) * WW;
+      BZ[i]   =  r / (ROWS - 1)         * DD; // 0 = far, DD = near camera
+    }
+  }
+
+  // Draw back → front: high Z row first (far), low Z last (near)
+  // Sort indices by descending Z (far terrain drawn first)
+  const ORDER = Array.from({ length: N }, (_, i) => i)
+                     .sort((a, b) => BZ[b] - BZ[a]);
+
+  // ── Camera & projection ───────────────────────────────────────────────
+  // Camera is above, looking down and forward across the terrain.
+  // Terrain Z=0 is far edge, Z=DD is near edge (in front of camera).
+  // We place camera at Z = DD + camPullback, Y = camHeight.
+  const CAM_PULL = 7.0;   // units behind the near edge
+  const CAM_H    = 8.5;   // height above terrain baseline
+  const CAM_OX   = 2.8;   // lateral offset → creates diagonal perspective
+  const FOV_D    = 210;   // focal length in pixels at reference height
+
+  // Max depth from camera to farthest terrain row
+  const MAX_DEPTH = DD + CAM_PULL;
+
+  function project(wx, wy, wz, camSX) {
+    // depth = distance from camera (camera is at Z = DD + CAM_PULL)
+    const depth = (DD + CAM_PULL) - wz;
+    if (depth < 0.4) return null;
+    const scale = FOV_D / depth;
+    return {
+      sx: CX + (wx - CAM_OX - camSX) * scale,
+      sy: CY * 0.80 - (wy - CAM_H)   * scale,
+      scale,
+      depth,
+    };
+  }
+
+  // ── Wave function ─────────────────────────────────────────────────────
+  function waveY(x, z, t) {
+    // Remap Z so far edge (z=0) has same treatment as near (z=DD)
+    const zn = z / DD;  // 0..1
+    return (
+      Math.sin(x * 0.44 + t * 0.48) * 0.70 +
+      Math.sin(zn * 6.5 + t * 0.37) * 0.55 +
+      Math.sin((x - zn * 10) * 0.21 + t * 0.29) * 0.45 +
+      Math.sin(x * 0.70 - t * 0.23) * 0.22 +
+      Math.sin(zn * 9.0 + t * 0.17) * 0.18 +
+      Math.sin((x * 0.16 + zn * 3.0) + t * 0.11) * 0.12
+    );
+  }
+
+  // ── Resize ────────────────────────────────────────────────────────────
+  function resize() {
+    W  = canvas.width  = window.innerWidth;
+    H  = canvas.height = window.innerHeight;
+    CX = W * 0.47;  // slightly left of centre for diagonal look
+    CY = H * 0.50;
+  }
+
+  // ── Animation ─────────────────────────────────────────────────────────
+  let t = 0;
+
+  function tick() {
+    requestAnimationFrame(tick);
+    t += 0.0045;  // very slow — cinematic
+
+    // Subtle camera lateral sway (parallax)
+    const camSX = Math.sin(t * 0.09) * 1.4;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw particles back → front
+    for (let oi = 0; oi < N; oi++) {
+      const i  = ORDER[oi];
+      const bx = BX[i];
+      const bz = BZ[i];
+      const wy = waveY(bx, bz, t);
+
+      const p = project(bx, wy, bz, camSX);
+      if (!p) continue;
+
+      const { sx, sy, scale, depth } = p;
+
+      // Cull off-screen with generous margin
+      if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
+
+      // Exponential depth fog — particles vanish toward far edge
+      const fog = Math.exp(-depth * 0.060);
+      if (fog < 0.018) continue;
+
+      // Main particle — sz is in screen pixels, NO multiplication by SP
+      // scale ≈ FOV/depth; at depth=7 → scale≈30 → sz≈4px  ✓
+      const sz = Math.max(1.2, scale * 0.13);
+      ctx.globalAlpha = fog * 0.42;
+      ctx.drawImage(sprite, sx - sz * 0.5, sy - sz * 0.5, sz, sz);
+
+      // Ridge bloom: subtle soft halo only at clear crests
+      if (wy > 0.55) {
+        const bsz = sz * 3.5;
+        ctx.globalAlpha = fog * (wy - 0.55) * 0.035;
+        ctx.drawImage(spriteL, sx - bsz * 0.5, sy - bsz * 0.5, bsz, bsz);
+      }
+    }
+
+    ctx.globalAlpha = 1.0;
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  tick();
+})();
+
+// ── UI Sound Kit ──────────────────────────────────────────────────────────
+(() => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  function blip({ freq = 600, type = 'triangle', duration = 0.12, volume = 0.12, glide = 0, vibrato = 0, filterFreq = 2000, q = 3 } = {}) {
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (glide !== 0) osc.frequency.exponentialRampToValueAtTime(freq * Math.pow(2, glide / 1200), now + duration);
+    filter.type = 'lowpass'; filter.frequency.value = filterFreq; filter.Q.value = q;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    if (vibrato > 0) {
+      const vOsc = ctx.createOscillator(); const vGain = ctx.createGain();
+      vOsc.frequency.value = 8; vGain.gain.value = vibrato * 6;
+      vOsc.connect(vGain); vGain.connect(osc.frequency);
+      vOsc.start(now); vOsc.stop(now + duration);
+    }
+    osc.start(now); osc.stop(now + duration + 0.02);
+  }
+  window.uiSound = function(type = 'tap') {
+    try {
+      switch (type) {
+        case 'tap':     blip({ freq: 700, duration: 0.08 }); break;
+        case 'confirm': blip({ freq: 600, glide: 80, duration: 0.12 }); break;
+        case 'success': blip({ freq: 700, duration: 0.09 }); setTimeout(() => blip({ freq: 900, duration: 0.11 }), 40); break;
+        case 'error':   blip({ freq: 500, glide: -120, type: 'sawtooth', filterFreq: 1200, duration: 0.14 }); break;
+        case 'warning': blip({ freq: 650, vibrato: 0.4, duration: 0.16, filterFreq: 1400 }); break;
+        case 'hover':   blip({ freq: 900, duration: 0.05, volume: 0.06, filterFreq: 2500 }); break;
+        case 'back':    blip({ freq: 700, glide: -90, duration: 0.1 }); break;
+        case 'data':    blip({ freq: 800, duration: 0.06 }); setTimeout(() => blip({ freq: 820, duration: 0.06 }), 25); break;
+        case 'unlock':  blip({ freq: 600, duration: 0.08 }); setTimeout(() => blip({ freq: 800, duration: 0.1 }), 30); setTimeout(() => blip({ freq: 1000, duration: 0.12 }), 70); break;
+        case 'alert':
+          blip({ freq: 880, type: 'square', duration: 0.14, volume: 0.22, filterFreq: 3000 });
+          setTimeout(() => blip({ freq: 660, type: 'square', duration: 0.14, volume: 0.22, filterFreq: 3000 }), 160);
+          setTimeout(() => blip({ freq: 880, type: 'square', duration: 0.14, volume: 0.22, filterFreq: 3000 }), 320);
+          setTimeout(() => blip({ freq: 660, type: 'square', duration: 0.14, volume: 0.22, filterFreq: 3000 }), 480);
+          break;
+      }
+    } catch (_) {}
+  };
+})();
+
+window.addEventListener('load', () => {
+  const api = window.electronAPI;
+  let extensionInstalled = false;
+  let proxyEnabled = false;
+  let recentlyShown = new Set();
+  let _checkingUpdates = false;
+
+  // ── Startup overlay ───────────────────────────────────────────────
+  const overlay        = document.getElementById('initOverlay');
+  const overlayTitle   = document.getElementById('overlayTitle');
+  const overlayStatus  = document.getElementById('overlayStatus');
+  const overlaySpinner = document.getElementById('overlaySpinner');
+  const overlayRetry   = document.getElementById('overlayRetry');
+  let overlayDismissed = false;
+
+  api.invoke('get-version').then(version => {
+    document.getElementById('currentVersion').textContent = version;
+  });
+
+  function dismissOverlay() {
+    if (overlayDismissed) return;
+    overlayDismissed = true;
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+  }
+
+  // ── Status dot helper ─────────────────────────────────────────────
+  function setStatusDotLive(live) {
+    const dot = document.getElementById('statusDot');
+    if (live) dot.classList.add('live');
+    else      dot.classList.remove('live');
+  }
+  setStatusDotLive(true);
+
+  // ── Tab system ────────────────────────────────────────────────────
+  const tabBtns   = document.querySelectorAll('.tab-btn');
+  const tabPanels = document.querySelectorAll('.tab-panel');
+
+  function switchTab(tabId) {
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+    tabPanels.forEach(p => p.classList.toggle('active', p.id === `tab-${tabId}`));
+  }
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => { uiSound('tap'); switchTab(btn.dataset.tab); });
+  });
+
+  // ── Classification log ────────────────────────────────────────────
+  const logArea  = document.getElementById('logArea');
+  const logEmpty = document.getElementById('logEmpty');
+  let logCount   = 0;
+  const LOG_MAX  = 150;
+
+  const TYPE_META = {
+    text:    { label: 'TXT', blockedBar: 'rgba(255,255,255,0.85)', passedBar: 'rgba(255,255,255,0.15)', blockedText: 'rgba(255,255,255,0.9)', passedText: 'rgba(255,255,255,0.3)' },
+    ad:      { label: 'AD',  blockedBar: 'rgba(255,255,255,0.85)', passedBar: 'rgba(255,255,255,0.15)', blockedText: 'rgba(255,255,255,0.9)', passedText: 'rgba(255,255,255,0.3)' },
+    image:   { label: 'IMG', blockedBar: 'rgba(255,255,255,0.85)', passedBar: 'rgba(255,255,255,0.15)', blockedText: 'rgba(255,255,255,0.9)', passedText: 'rgba(255,255,255,0.3)' },
+    youtube: { label: 'YT',  blockedBar: 'rgba(255,255,255,0.85)', passedBar: 'rgba(255,255,255,0.15)', blockedText: 'rgba(255,255,255,0.9)', passedText: 'rgba(255,255,255,0.3)' },
+  };
+
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    return [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+  }
+
+  function addLogEntry({ ts, type, outcome, target, confidence }) {
+    if (logEmpty && logEmpty.parentNode) logEmpty.remove();
+
+    const meta      = TYPE_META[type] || TYPE_META.text;
+    const isBlocked = outcome === 'blocked';
+    const barColor  = isBlocked ? meta.blockedBar : meta.passedBar;
+    const confVal   = confidence != null ? confidence : (isBlocked ? 100 : 0);
+    const confPct   = `${confVal}%`;
+    const targetStr = (target || '').slice(0, 30);
+    const outcomeText  = isBlocked ? 'BLOCKED' : 'passed';
+    const outcomeColor = isBlocked ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.25)';
+    const outcomeWeight = isBlocked ? '700' : '400';
+
+    const row = document.createElement('div');
+    row.className = 'log-entry';
+    row.innerHTML =
+      `<span style="color:rgba(255,255,255,0.2);flex-shrink:0;margin-right:8px;font-size:10px;font-family:'JetBrains Mono',monospace">[${fmtTime(ts)}]</span>` +
+      `<span style="color:rgba(255,255,255,0.5);font-weight:600;width:30px;flex-shrink:0;margin-right:10px;font-size:10px;font-family:'JetBrains Mono',monospace">${meta.label}</span>` +
+      `<div style="width:60px;flex-shrink:0;margin-right:6px;display:flex;align-items:center;gap:4px">` +
+        `<div style="flex:1;height:2px;background:rgba(255,255,255,0.07);border-radius:1px;overflow:hidden">` +
+          `<div style="height:100%;width:${confVal}%;background:${barColor};transition:width 0.3s;border-radius:1px"></div>` +
+        `</div>` +
+        `<span style="color:rgba(255,255,255,0.3);font-size:9px;width:26px;text-align:right;flex-shrink:0;font-family:'JetBrains Mono',monospace">${confPct}</span>` +
+      `</div>` +
+      `<span style="color:rgba(255,255,255,0.5);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-right:10px;font-size:11px">${targetStr}</span>` +
+      `<span style="color:${outcomeColor};font-weight:${outcomeWeight};flex-shrink:0;font-size:10px;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace">${outcomeText}</span>`;
+
+    logArea.insertBefore(row, logArea.firstChild);
+    logCount++;
+
+    if (logCount > LOG_MAX) {
+      const last = logArea.lastChild;
+      if (last && last !== logEmpty) { logArea.removeChild(last); logCount--; }
+    }
+  }
+
+  api.on('classification-entry', entry => addLogEntry(entry));
+
+  document.getElementById('clearLogBtn').addEventListener('click', () => {
+    uiSound('back');
+    logArea.innerHTML = '';
+    logCount = 0;
+    logArea.appendChild(logEmpty);
+  });
+
+  // ── Counter animations ────────────────────────────────────────────
+  function animateCounter(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = value.toLocaleString();
+    el.classList.remove('counter-bump');
+    void el.offsetWidth;
+    el.classList.add('counter-bump');
+  }
+
+  // ── Time saved ────────────────────────────────────────────────────
+  let _savedText = 0, _savedImages = 0, _savedVideos = 0;
+  function updateTimeSaved() {
+    const totalSeconds = (_savedText * 5) + (_savedImages * 1) + (_savedVideos * 30);
+    const el = document.getElementById('time-saved-value');
+    if (!el) return;
+    if      (totalSeconds < 60)    el.textContent = `${Math.round(totalSeconds)}s`;
+    else if (totalSeconds < 3600)  el.textContent = `${Math.round(totalSeconds / 60)}m`;
+    else if (totalSeconds < 86400) el.textContent = `${Math.round(totalSeconds / 3600)}h`;
+    else                           el.textContent = `${Math.round(totalSeconds / 86400)}d`;
+  }
+
+  api.on('filter-count',  v => { animateCounter('slop-counter', v); _savedText = v; updateTimeSaved(); });
+  api.on('images-count',  v => { animateCounter('images-counter', v); _savedImages = v; updateTimeSaved(); });
+  api.on('youtube-count', v => { animateCounter('youtube-counter', v); _savedVideos = v; updateTimeSaved(); });
+
+  api.on('text-analyzed',   v => { const el = document.getElementById('text-checked');    if (el) el.textContent = '(' + v.toLocaleString() + ')'; });
+  api.on('images-analyzed', v => { const el = document.getElementById('images-checked');  if (el) el.textContent = '(' + v.toLocaleString() + ')'; });
+  api.on('youtube-analyzed',v => { const el = document.getElementById('youtube-checked'); if (el) el.textContent = '(' + v.toLocaleString() + ')'; });
+
+  api.on('status-update', msg => {
+    document.getElementById('statusText').textContent = msg;
+    if (!overlayDismissed) overlayStatus.textContent = msg;
+    const isError = /fail|error/i.test(msg);
+    setStatusDotLive(!isError);
+  });
+
+  api.on('cert-installing', () => { proxyToggle.setLocked(true); });
+
+  api.on('cert-ready', ok => {
+    proxyToggle.setLocked(false);
+    if (ok) {
+      uiSound('success');
+      dismissOverlay();
+    } else {
+      uiSound('error');
+      if (!overlayDismissed) {
+        overlaySpinner.style.display = 'none';
+        overlayTitle.textContent = 'CERTIFICATE INSTALL FAILED';
+        overlayTitle.style.color = 'rgba(255,100,100,0.9)';
+        overlayStatus.textContent = 'Click Retry or use the CERT button in the Settings tab.';
+        overlayRetry.style.display = 'inline-flex';
+      }
+    }
+  });
+
+  overlayRetry.addEventListener('click', () => {
+    uiSound('confirm');
+    overlaySpinner.style.display = '';
+    overlayTitle.textContent = 'RETRYING…';
+    overlayTitle.style.color = '';
+    overlayRetry.style.display = 'none';
+    api.send('reinstall-cert');
+  });
+
+  // ── Toggles ───────────────────────────────────────────────────────
+  function mkToggle(trackId, onSend, offSend) {
+    const track = document.getElementById(trackId);
+    track.addEventListener('click', () => {
+      if (track.classList.contains('disabled')) return;
+      const isOn = track.classList.toggle('on');
+      uiSound('tap');
+      api.send(isOn ? onSend : offSend);
+    });
+    return {
+      set(val) { track.classList.toggle('on', val); },
+      isOn() { return track.classList.contains('on'); },
+      setLocked(v) { track.classList.toggle('disabled', v); },
+    };
+  }
+
+  const mainToggle    = mkToggle('mainTrack',  'toggle-filter',          'toggle-filter');
+  const imageToggle   = mkToggle('imageTrack', 'toggle-image-detection', 'toggle-image-detection');
+  const videoToggle   = mkToggle('videoTrack', 'toggle-video-detection', 'toggle-video-detection');
+  const youtubeToggle = mkToggle('ytTrack',    'toggle-youtube-filter',  'toggle-youtube-filter');
+  const proxyToggle   = mkToggle('proxyTrack', 'toggle-proxy',           'toggle-proxy');
+
+  let _videoProbeReady = false;
+  let _modelCounts = { text: 2, image: 3, video: 1 };
+
+  function _applyModelCounts(counts) {
+    if (!counts) return;
+    _modelCounts = { ..._modelCounts, ...counts };
+    const imgTotal = _modelCounts.image;
+    if (imgProgressFraction) imgProgressFraction.textContent = `0 / ${imgTotal}`;
+    if (imgReadyLabel && !_imgModelsReady) {
+      imgReadyLabel.textContent = `${imgTotal} / ${imgTotal} models active`;
+    }
+  }
+
+  function _filterSubText(type) {
+    switch (type) {
+      case 'text':
+        return `${_modelCounts.text}-model text ensemble`;
+      case 'image':
+        return `${_modelCounts.image}-model ONNX ensemble · ~223 MB`;
+      case 'video':
+        return `${_modelCounts.video} CLIP model + linear probe`;
+      default:
+        return '';
+    }
+  }
+
+  function _updateVideoLock() {
+    const locked = !extensionInstalled || !_videoProbeReady;
+    videoToggle.setLocked(locked);
+    syncCardBorder('videoCard', videoToggle.isOn() && !locked);
+    const sub = document.getElementById('videoSubtitle');
+    if (!sub) return;
+    if (!extensionInstalled) sub.textContent = 'Install extension to enable';
+    else if (!_videoProbeReady) sub.textContent = 'Video probe model not found';
+    else if (videoToggle.isOn()) sub.textContent = 'Scanning reels with CLIP frame probe';
+    else sub.textContent = _filterSubText('video');
+  }
+
+  function syncCardBorder(cardId, isOn) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    card.classList.toggle('fc-on', isOn);
+  }
+
+  function _proxySubtitleText(on) {
+    return on
+      ? 'Intercepts all browser and app traffic · <span style="color:var(--text-3);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" id="goBypassLink">manage bypass</span>'
+      : 'Off — extension-only mode active';
+  }
+
+  function _mainSubtitleText(filterOn) {
+    if (!filterOn) return proxyEnabled ? 'AI text filtering paused · proxy still active' : 'AI text filtering paused';
+    const ensemble = _filterSubText('text');
+    if (proxyEnabled) return extensionInstalled ? `${ensemble} via proxy + extension` : `${ensemble} via proxy · add extension for social media`;
+    return extensionInstalled ? `${ensemble} via extension` : 'Install extension to filter AI text';
+  }
+
+  api.on('proxy-status', v => {
+    proxyEnabled = v;
+    proxyToggle.set(v);
+    const card = document.getElementById('proxyCard');
+    if (card) card.classList.toggle('fc-on', v);
+    document.getElementById('proxySubtitle').innerHTML = _proxySubtitleText(v);
+    const newLink = document.getElementById('goBypassLink');
+    if (newLink) newLink.addEventListener('click', e => { e.stopPropagation(); uiSound('tap'); switchTab('bypass'); });
+    document.getElementById('mainSubtitle').textContent = _mainSubtitleText(mainToggle.isOn());
+
+    const bypassBtn = document.getElementById('bypassTabBtn');
+    if (bypassBtn) {
+      bypassBtn.classList.toggle('hidden', !v);
+      if (!v) {
+        const activePanel = document.querySelector('.tab-panel.active');
+        if (activePanel && activePanel.id === 'tab-bypass') switchTab('filters');
+      }
+    }
+  });
+
+  api.on('proxy-start-failed', ({ message }) => {
+    proxyEnabled = false;
+    proxyToggle.set(false);
+    const card = document.getElementById('proxyCard');
+    if (card) card.classList.remove('fc-on');
+    document.getElementById('proxySubtitle').innerHTML =
+      `<span style="color:rgba(255,100,100,0.8);">⚠ Failed to start: ${message}</span>`;
+    document.getElementById('mainSubtitle').textContent = _mainSubtitleText(mainToggle.isOn());
+    uiSound('error');
+  });
+
+  // ── TLS bypass alert ──────────────────────────────────────────────
+  api.on('suggest-bypass', ({ hostname, reason }) => {
+    if (recentlyShown.has(hostname)) return;
+    recentlyShown.add(hostname);
+    setTimeout(() => recentlyShown.delete(hostname), 15000);
+    uiSound('alert');
+
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif';
+
+    const card = document.createElement('div');
+    card.className = 'bypass-alert-card';
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">⚠</div>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:#fff;margin-bottom:3px">App blocked by proxy</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4)">${reason}</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(255,255,255,0.8);margin-bottom:14px;word-break:break-all">${hostname}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:16px;line-height:1.6">
+        The proxy MITM certificate was rejected. Adding this host to the bypass list lets it connect directly.
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="_bypass-add" style="flex:1;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.15);padding:9px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.08em;font-family:inherit;transition:background 0.2s">ADD TO BYPASS</button>
+        <button id="_bypass-ignore" style="background:transparent;color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.08);padding:9px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit">IGNORE</button>
+      </div>
+    `;
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+    const dismiss = () => ov.remove();
+    card.querySelector('#_bypass-add').onclick    = () => { api.send('add-bypass', hostname); dismiss(); };
+    card.querySelector('#_bypass-ignore').onclick = dismiss;
+    ov.addEventListener('click', e => { if (e.target === ov) dismiss(); });
+    setTimeout(dismiss, 20000);
+  });
+
+  // ── Bypass list ───────────────────────────────────────────────────
+  let _bypassDomains    = [];
+  let _protectedDomains = new Set();
+
+  function renderBypassDomains({ list, protected: prot } = {}) {
+    _bypassDomains = list || [];
+    if (prot) _protectedDomains = new Set(prot);
+
+    const visible     = _bypassDomains.filter(d => d !== 'localhost' && d !== '127.0.0.1');
+    const isProtected = d => _protectedDomains.has(d);
+    const userAdded   = visible.filter(d => !isProtected(d));
+    const systemDoms  = visible.filter(d =>  isProtected(d));
+
+    const inlineList = document.getElementById('bypassInlineList');
+    const userHtml = userAdded.length === 0
+      ? '<div style="font-size:11px;color:var(--text-4);text-align:center;padding:20px 0;">No bypass domains added yet.</div>'
+      : userAdded.map(d =>
+          `<div class="bypass-list-item">
+            <span class="hostname">${d}</span>
+            <button data-host="${d}" class="bypass-inline-remove bypass-remove-btn">×</button>
+          </div>`
+        ).join('');
+
+    const systemHtml = systemDoms.length === 0 ? '' :
+      `<div style="font-size:9px;font-weight:600;color:var(--text-4);letter-spacing:0.15em;text-transform:uppercase;margin:10px 0 6px;">Required by SlopBlock</div>` +
+      systemDoms.map(d =>
+        `<div class="bypass-list-item" title="Required for AI model downloads and app updates — cannot be removed">
+          <span class="hostname" style="color:var(--text-4);">${d}</span>
+          <span style="font-size:10px;color:var(--text-4);">LOCK</span>
+        </div>`
+      ).join('');
+
+    inlineList.innerHTML = userHtml + systemHtml;
+    inlineList.querySelectorAll('.bypass-inline-remove').forEach(btn => {
+      btn.onclick = () => { uiSound('back'); api.send('remove-bypass', btn.dataset.host); };
+    });
+  }
+
+  api.on('bypass-domains', payload => renderBypassDomains(payload));
+
+  const bypassInput = document.getElementById('bypassAddInput');
+  function submitBypassAdd() {
+    const val = bypassInput.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (!val) return;
+    uiSound('confirm');
+    api.send('add-bypass', val);
+    bypassInput.value = '';
+  }
+  document.getElementById('bypassAddBtn').addEventListener('click', submitBypassAdd);
+  bypassInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBypassAdd(); });
+
+  // ── Trusted patterns list ─────────────────────────────────────────
+  function renderTrustedPatterns(patterns) {
+    const list = document.getElementById('trustedInlineList');
+    if (!patterns || patterns.length === 0) {
+      list.innerHTML = '<div style="font-size:11px;color:var(--text-4);text-align:center;padding:12px 0;">No trusted sources added yet.</div>';
+      return;
+    }
+    list.innerHTML = patterns.map(p =>
+      `<div class="bypass-list-item">
+        <span class="hostname" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;">${p}</span>
+        <button data-pattern="${p.replace(/"/g, '&quot;')}" class="trusted-inline-remove bypass-remove-btn">×</button>
+      </div>`
+    ).join('');
+    list.querySelectorAll('.trusted-inline-remove').forEach(btn => {
+      btn.onclick = () => { uiSound('back'); api.send('remove-trusted-pattern', btn.dataset.pattern); };
+    });
+  }
+
+  api.on('trusted-patterns', patterns => renderTrustedPatterns(patterns));
+
+  const trustedInput = document.getElementById('trustedAddInput');
+  function submitTrustedAdd() {
+    const val = trustedInput.value.trim();
+    if (!val) return;
+    uiSound('confirm');
+    api.send('add-trusted-pattern', val);
+    trustedInput.value = '';
+  }
+  document.getElementById('trustedAddBtn').addEventListener('click', submitTrustedAdd);
+  trustedInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitTrustedAdd(); });
+
+  // ── Image card nudge ──────────────────────────────────────────────
+  document.getElementById('imageCard').addEventListener('click', e => {
+    if (!extensionInstalled && !e.target.closest('.toggle-track')) {
+      uiSound('warning');
+      document.getElementById('imgSubtitle').textContent = 'Install the extension first ↑';
+      setTimeout(() => {
+        document.getElementById('imgSubtitle').textContent = 'Install extension to enable';
+      }, 2500);
+    }
+  });
+
+  document.getElementById('videoCard').addEventListener('click', e => {
+    if ((!extensionInstalled || !_videoProbeReady) && !e.target.closest('.toggle-track')) {
+      uiSound('warning');
+      const sub = document.getElementById('videoSubtitle');
+      sub.textContent = !extensionInstalled ? 'Install the extension first ↑' : 'Train/export models/clip_video_probe.json';
+      setTimeout(() => _updateVideoLock(), 2500);
+    }
+  });
+
+  // ── Status syncs ──────────────────────────────────────────────────
+  api.on('filter-status', v => {
+    mainToggle.set(v);
+    syncCardBorder('mainCard', v);
+    document.getElementById('mainSubtitle').textContent = _mainSubtitleText(v);
+  });
+  api.on('image-detection-status', v => {
+    imageToggle.set(v);
+    syncCardBorder('imageCard', v);
+  });
+  api.on('video-detection-status', v => {
+    videoToggle.set(v);
+    _updateVideoLock();
+  });
+  api.on('video-probe-ready', v => {
+    _videoProbeReady = !!v;
+    _updateVideoLock();
+  });
+  api.on('youtube-filter-status',  v => youtubeToggle.set(v));
+
+  // ── Extension installed ───────────────────────────────────────────
+  function setExtInstalled(installed) {
+    extensionInstalled = installed;
+    const badge      = document.getElementById('extBadge');
+    const installBtn = document.getElementById('installExtBtn');
+    const folderBtn  = document.getElementById('openFolderBtn');
+    const imgSub     = document.getElementById('imgSubtitle');
+
+    if (installed) {
+      badge.innerHTML = '✓ INSTALLED';
+      badge.className = 'installed';
+      badge.style.cssText = 'flex-shrink:0;font-size:9px;font-weight:600;letter-spacing:0.1em;padding:4px 9px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);color:var(--text-2);background:transparent;display:inline-flex;align-items:center;gap:5px;';
+      installBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.47"/></svg> REINSTALL`;
+      folderBtn.style.display = 'flex';
+      imageToggle.setLocked(false);
+      document.getElementById('imageCard').style.cursor = 'pointer';
+      imgSub.textContent = _filterSubText('image');
+      videoToggle.setLocked(!_videoProbeReady);
+      _updateVideoLock();
+    } else {
+      badge.innerHTML = 'NOT INSTALLED';
+      badge.className = '';
+      badge.style.cssText = 'flex-shrink:0;font-size:9px;font-weight:600;letter-spacing:0.1em;padding:4px 9px;border-radius:8px;border:1px solid var(--border);color:var(--text-3);background:transparent;display:inline-flex;align-items:center;';
+      imageToggle.setLocked(true);
+      videoToggle.setLocked(true);
+      imgSub.textContent = 'Install extension to enable';
+      _updateVideoLock();
+    }
+  }
+
+  api.on('extension-installed', v => {
+    if (v) uiSound('success');
+    setExtInstalled(v);
+    _updateStgImageLock();
+  });
+
+  // ── Utility buttons ───────────────────────────────────────────────
+  document.getElementById('resetBtn').addEventListener('click', () => { uiSound('confirm'); api.send('reset-all'); });
+  document.getElementById('certBtn').addEventListener('click', () => { uiSound('confirm'); api.send('reinstall-cert'); });
+  document.getElementById('debugLogBtn').addEventListener('click', () => { uiSound('tap'); api.send('open-debug-log'); });
+  document.getElementById('openFolderBtn').addEventListener('click', () => { uiSound('tap'); api.send('open-extension-folder'); });
+
+  // ── Settings ──────────────────────────────────────────────────────
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    uiSound('tap');
+    document.getElementById('settingsModal').classList.add('open');
+  });
+
+  function openModal(id)  { uiSound('tap');  document.getElementById(id).classList.add('open');    }
+  function closeModal(id) { uiSound('back'); document.getElementById(id).classList.remove('open'); }
+
+  document.getElementById('aboutModalClose').addEventListener('click',    () => closeModal('aboutModal'));
+  document.getElementById('privacyModalClose').addEventListener('click',  () => closeModal('privacyModal'));
+  document.getElementById('termsModalClose').addEventListener('click',    () => closeModal('termsModal'));
+  document.getElementById('settingsModalClose').addEventListener('click', () => closeModal('settingsModal'));
+
+  ['aboutModal','privacyModal','termsModal','settingsModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => { if (e.target === document.getElementById(id)) closeModal(id); });
+  });
+
+  document.getElementById('aboutLink').addEventListener('click',   () => openModal('aboutModal'));
+  document.getElementById('privacyLink').addEventListener('click', () => openModal('privacyModal'));
+  document.getElementById('termsLink').addEventListener('click',   () => openModal('termsModal'));
+
+  // ── Install modal ─────────────────────────────────────────────────
+  let modalOpen = false;
+  const installModal = document.getElementById('installModal');
+  const WIZARD_STEPS = 5;
+
+  function goToStep(n) {
+    for (let i = 1; i <= WIZARD_STEPS; i++) {
+      document.getElementById('step' + i).classList.toggle('active', i === n);
+      const dot = document.getElementById('dot' + i);
+      if (dot) dot.className = 'step-dot' + (i === n ? ' active' : i < n ? ' done' : '');
+    }
+    for (let i = 1; i < WIZARD_STEPS; i++) {
+      const line = document.getElementById('line' + i);
+      if (line) line.className = 'step-line' + (n > i ? ' active' : '');
+    }
+  }
+
+  function openInstallModal() {
+    if (modalOpen) return;
+    modalOpen = true;
+    goToStep(1);
+    installModal.classList.add('open');
+    // Trigger step 1 URL typing animation
+    setTimeout(() => {
+      const urlText = document.getElementById('wizardUrlText');
+      if (urlText) urlText.classList.add('typing');
+    }, 400);
+  }
+
+  function closeInstallModal() {
+    uiSound('back');
+    installModal.classList.remove('open');
+    modalOpen = false;
+    // Reset wizard animations so they replay next time
+    setTimeout(() => {
+      const urlText = document.getElementById('wizardUrlText');
+      if (urlText) urlText.classList.remove('typing');
+    }, 300);
+  }
+
+  document.getElementById('installExtBtn').addEventListener('click', () => { uiSound('confirm'); openInstallModal(); });
+
+  document.getElementById('modalClose').addEventListener('click', () => closeInstallModal());
+  installModal.addEventListener('click', e => { if (e.target === installModal) closeInstallModal(); });
+
+  document.getElementById('wizardNext1').addEventListener('click', () => { uiSound('tap'); goToStep(2); });
+  document.getElementById('wizardNext2').addEventListener('click', () => { uiSound('tap'); goToStep(3); });
+  document.getElementById('wizardNext3').addEventListener('click', () => { uiSound('tap'); goToStep(4); });
+  document.getElementById('wizardNext4').addEventListener('click', () => { uiSound('tap'); goToStep(5); });
+
+  document.getElementById('wizardDoneBtn').addEventListener('click', () => {
+    uiSound('success');
+    api.send('mark-extension-installed');
+    closeInstallModal();
+    setExtInstalled(true);
+    switchTab('filters');
+    if (!imageToggle.isOn()) {
+      setTimeout(() => {
+        imageToggle.set(true);
+        api.send('toggle-image-detection');
+        document.getElementById('imageCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 350);
+    }
+  });
+
+  // ── Settings toggles ──────────────────────────────────────────────
+  const STG_TOGGLES = [
+    { id: 'stgLaunchTrack', key: 'launchAtStartup' },
+    { id: 'stgTrayTrack',   key: 'minimizeToTray' },
+    { id: 'stgTextTrack',   key: 'defaultTextFilter' },
+    { id: 'stgImageTrack',  key: 'defaultImageDetection' },
+    { id: 'stgVideoTrack',  key: 'defaultVideoDetection' },
+    { id: 'stgYtTrack',     key: 'defaultYoutubeFilter' },
+  ];
+
+  let _imgModelsReady  = false;
+  const _stgImageTrack = document.getElementById('stgImageTrack');
+  const _stgImageNote  = document.getElementById('stgImageNote');
+
+  function _updateStgImageLock() {
+    const locked = !extensionInstalled || !_imgModelsReady;
+    _stgImageTrack.classList.toggle('disabled', locked);
+    _stgImageNote.classList.toggle('hidden', !locked);
+    if (locked) {
+      const missing = [];
+      if (!extensionInstalled) missing.push('extension installed');
+      if (!_imgModelsReady)    missing.push('models loaded once');
+      _stgImageNote.textContent = `Requires: ${missing.join(' · ')}`;
+    }
+  }
+
+  STG_TOGGLES.forEach(({ id, key }) => {
+    document.getElementById(id).addEventListener('click', function () {
+      if (this.classList.contains('disabled')) { uiSound('warning'); return; }
+      const isOn = this.classList.toggle('on');
+      uiSound('tap');
+      api.send('set-setting', { key, value: isOn });
+    });
+  });
+
+  api.on('settings-loaded', settings => {
+    STG_TOGGLES.forEach(({ id, key }) => {
+      if (settings[key] !== undefined)
+        document.getElementById(id).classList.toggle('on', !!settings[key]);
+    });
+    _imgModelsReady = !!settings.imageModelsReady;
+    _updateStgImageLock();
+  });
+
+  // ── Video detection threshold ─────────────────────────────────────
+  const _stgVideoSlider = document.getElementById('stgVideoThreshold');
+  const _stgVideoVal    = document.getElementById('stgVideoThresholdVal');
+  let _videoThresholdTimer = null;
+
+  function _applyVideoThresholdUi(pct) {
+    _stgVideoSlider.value = pct;
+    _stgVideoVal.textContent = `${pct}%`;
+  }
+
+  function _persistVideoThreshold(pct) {
+    const warn = pct / 100;
+    const block = Math.min(0.95, warn + 0.10);
+    api.send('set-config', { key: 'videoWarnThreshold', value: warn });
+    api.send('set-config', { key: 'videoBlockThreshold', value: block });
+  }
+
+  _stgVideoSlider.addEventListener('input', () => {
+    const pct = Number(_stgVideoSlider.value);
+    _applyVideoThresholdUi(pct);
+    clearTimeout(_videoThresholdTimer);
+    _videoThresholdTimer = setTimeout(() => {
+      uiSound('tap');
+      _persistVideoThreshold(pct);
+    }, 120);
+  });
+
+  function _loadVideoThresholdConfig(values) {
+    const warn = values?.videoWarnThreshold;
+    if (typeof warn === 'number') _applyVideoThresholdUi(Math.round(warn * 100));
+  }
+
+  api.invoke('get-config').then(payload => {
+    if (payload?.values) _loadVideoThresholdConfig(payload.values);
+  }).catch(() => {});
+
+  api.on('config-loaded', payload => {
+    if (payload?.values) _loadVideoThresholdConfig(payload.values);
+  });
+
+  // ── Auto-updater UI ───────────────────────────────────────────────
+  const _updateBanner       = document.getElementById('updateBanner');
+  const _updateBannerText   = document.getElementById('updateBannerText');
+  const _updateProgressWrap = document.getElementById('updateProgressWrap');
+  const _updateProgressBar  = document.getElementById('updateProgressBar');
+  const _updateProgressPct  = document.getElementById('updateProgressPct');
+  const _updateRestartBtn   = document.getElementById('updateRestartBtn');
+
+  api.on('update-available', version => {
+    uiSound('data');
+    _updateBanner.classList.replace('hidden', 'flex');
+    _updateBannerText.textContent = `v${version} DOWNLOADING…`;
+    _updateProgressWrap.style.display = 'flex';
+  });
+  api.on('update-progress', pct => {
+    _updateProgressBar.style.width = `${pct}%`;
+    _updateProgressPct.textContent = `${pct}%`;
+  });
+  api.on('update-ready', version => {
+    uiSound('unlock');
+    _updateBannerText.textContent = `v${version} READY TO INSTALL`;
+    _updateProgressWrap.style.display = 'none';
+    _updateRestartBtn.classList.replace('hidden', 'block');
+  });
+  _updateRestartBtn.addEventListener('click', () => { uiSound('confirm'); api.send('install-update'); });
+
+  const _checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
+  _checkUpdatesBtn.addEventListener('click', () => {
+    if (_checkingUpdates) return;
+    uiSound('tap');
+    _checkingUpdates = true;
+    _checkUpdatesBtn.disabled = true;
+    _checkUpdatesBtn.textContent = 'CHECKING…';
+    api.send('check-for-updates');
+  });
+  api.on('update-check-start', () => {
+    _checkingUpdates = true;
+    _checkUpdatesBtn.disabled = true;
+    _checkUpdatesBtn.textContent = 'CHECKING…';
+  });
+  api.on('update-check-complete', ({ available, currentVersion }) => {
+    _checkingUpdates = false;
+    _checkUpdatesBtn.disabled = false;
+    if (!available) {
+      uiSound('confirm');
+      _checkUpdatesBtn.textContent = `v${currentVersion} IS LATEST`;
+      setTimeout(() => { _checkUpdatesBtn.textContent = 'CHECK FOR UPDATES'; }, 3000);
+    } else {
+      _checkUpdatesBtn.textContent = 'CHECK FOR UPDATES';
+    }
+  });
+  api.on('update-check-error', () => {
+    _checkingUpdates = false;
+    _checkUpdatesBtn.disabled = false;
+    _checkUpdatesBtn.textContent = 'CHECK FOR UPDATES';
+    uiSound('error');
+  });
+
+  // ── Image model progress ──────────────────────────────────────────
+  const imgModelProgress    = document.getElementById('imgModelProgress');
+  const imgProgressBar      = document.getElementById('imgProgressBar');
+  const imgProgressLabel    = document.getElementById('imgProgressLabel');
+  const imgProgressFraction = document.getElementById('imgProgressFraction');
+  const imgProgressModel    = document.getElementById('imgProgressModel');
+  const imgModelReady       = document.getElementById('imgModelReady');
+  const imgReadyLabel       = document.getElementById('imgReadyLabel');
+
+  api.on('model-counts', _applyModelCounts);
+
+  api.on('image-model-progress', ({ loaded, total, label, ok, done }) => {
+    if (done) {
+      uiSound('unlock');
+      _imgModelsReady = true;
+      _updateStgImageLock();
+      imgModelProgress.classList.remove('visible');
+      imgModelReady.classList.add('visible');
+      imgReadyLabel.textContent = `${loaded} / ${total} models active`;
+      return;
+    }
+    imgModelReady.classList.remove('visible');
+    imgModelProgress.classList.add('visible');
+    const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
+    imgProgressBar.style.width = `${pct}%`;
+    imgProgressFraction.textContent = `${loaded} / ${total}`;
+    if (loaded === 0) {
+      imgProgressLabel.textContent = `Loading ${label}…`;
+      imgProgressModel.textContent = '';
+    } else {
+      imgProgressLabel.textContent = ok ? `${label} ready` : `${label} unavailable`;
+      imgProgressModel.textContent = label;
+    }
+  });
+
+  // ── External links ────────────────────────────────────────────────
+  const extLinks = {
+    textModelLink: 'https://huggingface.co/onnx-community/tmr-ai-text-detector-ONNX',
+    textModel2Link: 'https://huggingface.co/onnx-community/e5-small-lora-ai-generated-detector-ONNX',
+    imgModelALink: 'https://huggingface.co/yaya36095/ai-source-detector',
+    imgModelBLink: 'https://huggingface.co/onnx-community/SMOGY-Ai-images-detector-ONNX',
+    imgModelCLink: 'https://huggingface.co/onnx-community/Deep-Fake-Detector-v2-Model-ONNX',
+    videoModelLink: 'https://huggingface.co/Xenova/clip-vit-base-patch32',
+  };
+  Object.entries(extLinks).forEach(([id, url]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => api.send('open-external', url));
+  });
+
+  // ── Theme toggle ──────────────────────────────────────────────────
+  const themeToggle = document.getElementById('themeToggle');
+  const _savedTheme = localStorage.getItem('slopblock-theme') || 'dim';
+  if (_savedTheme === 'vivid') {
+    document.body.classList.add('vivid');
+    themeToggle.textContent = 'VIV';
+  }
+  themeToggle.addEventListener('click', () => {
+    uiSound('tap');
+    const isVivid = document.body.classList.toggle('vivid');
+    themeToggle.textContent = isVivid ? 'VIV' : 'DIM';
+    localStorage.setItem('slopblock-theme', isVivid ? 'vivid' : 'dim');
+  });
+
+  // ── Feature card clicks ───────────────────────────────────────────
+  document.getElementById('proxyCard').addEventListener('click', e => {
+    if (!e.target.closest('.toggle-track')) api.send('toggle-proxy');
+  });
+  document.getElementById('mainCard').addEventListener('click', e => {
+    if (!e.target.closest('.toggle-track')) api.send('toggle-filter');
+  });
+});
+</script>
+</body>
+</html>
