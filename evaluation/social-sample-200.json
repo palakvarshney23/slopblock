@@ -1,0 +1,72 @@
+[
+  {
+    "id": "social-001",
+    "platform": "X/Twitter",
+    "text": "bro i just found out my cat has been secretly opening the treat drawer by himself for MONTHS. caught him red handed at 3am. little criminal. no remorse. just looked at me like 'and?'. I have VIDEO. https://t.co/abc123",
+    "label": "human",
+    "domain": "social"
+  },
+  {
+    "id": "social-002",
+    "platform": "LinkedIn",
+    "text": "Thrilled to announce that I have successfully completed a comprehensive professional development program. This transformative experience has equipped me with actionable insights and cutting-edge skills that will enable me to deliver unparalleled value to our organization. Grateful for this opportunity!",
+    "label": "ai",
+    "domain": "social"
+  },
+  {
+    "id": "social-003",
+    "platform": "Reddit",
+    "text": "NTA. Your house your rules. The fact that she brought her dog without asking after you SPECIFICALLY said no pets? That's entitlement, not a misunderstanding. I had a similar situation with my SIL and her 'emotional support' ferret. @aitathrowaway2023 was right to lock the thread tbh.",
+    "label": "human",
+    "domain": "social"
+  },
+  {
+    "id": "social-004",
+    "platform": "X/Twitter",
+    "text": "Here are 5 key takeaways from today's market analysis:\n\n1. Diversification remains crucial\n2. Long-term thinking pays dividends\n3. Risk management is non-negotiable\n4. Emotional decisions destroy portfolios\n5. Consistent investing beats timing\n\nWhat resonated most with you? Drop a comment below!",
+    "label": "ai",
+    "domain": "social"
+  },
+  {
+    "id": "social-005",
+    "platform": "LinkedIn",
+    "text": "After 8 months of debugging a race condition in our distributed scheduler, I finally found it: a missing fence in the ARM64 atomics path. The bug only manifested on M1 Macs running >16 threads. I wrote a 4,000-word post-mortem with flame graphs and the fix. https://engineering.company.com/postmortem-arm64-race",
+    "label": "human",
+    "domain": "social"
+  },
+  {
+    "id": "social-006",
+    "platform": "Reddit",
+    "text": "In the ever-evolving landscape of personal finance, it is crucial to adopt a holistic approach to wealth management. By leveraging the power of compound interest and maintaining a diversified portfolio, individuals can unlock their potential for long-term financial success.",
+    "label": "ai",
+    "domain": "social"
+  },
+  {
+    "id": "social-007",
+    "platform": "X/Twitter",
+    "text": "Just spent 6 hours trying to fix a CSS bug that turned out to be a missing semicolon in a media query. I want to cry. Also my rubber duck is judging me. https://t.co/saddev",
+    "label": "human",
+    "domain": "social"
+  },
+  {
+    "id": "social-008",
+    "platform": "LinkedIn",
+    "text": "I am excited to share that I have been recognized as a thought leader in the digital transformation space. This journey has been nothing short of transformative, and I am grateful for the support of my network. Let's continue to foster a culture of innovation and excellence together.",
+    "label": "ai",
+    "domain": "social"
+  },
+  {
+    "id": "social-009",
+    "platform": "Reddit",
+    "text": "Wait hold up. You're telling me that the 'official' charger from Amazon is counterfeit AND it set someone's house on fire? The reviews all look fake too. 5 stars with identical grammar. Someone run this through an AI detector. u/DataHoarder69 we need your scraper.",
+    "label": "human",
+    "domain": "social"
+  },
+  {
+    "id": "social-010",
+    "platform": "X/Twitter",
+    "text": "Unlock the potential of your morning routine with these 7 actionable insights:\n\n✅ Wake up at 5 AM\n✅ Cold shower for 2 minutes\n✅ Meditate for 10 minutes\n✅ Journal your gratitude\n✅ Read 10 pages\n✅ Drink 500ml water\n✅ Plan your top 3 priorities\n\nWhich one will you try first?",
+    "label": "ai",
+    "domain": "social"
+  }
+]

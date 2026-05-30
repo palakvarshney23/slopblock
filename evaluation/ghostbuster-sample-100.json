@@ -1,0 +1,72 @@
+[
+  {
+    "id": "gb-001",
+    "source": "NeurIPS 2024 accepted paper",
+    "text": "We propose GraphCausal, a method for identifying causal effects in graph neural networks. Our approach addresses the confounding problem introduced by neighborhood aggregation through a novel counterfactual sampling strategy. We prove that GraphCausal achieves unbiased estimation under the local ignorability assumption, and demonstrate a 12% improvement over baselines on the Amazon co-purchase dataset.",
+    "label": "human",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-002",
+    "source": "GPT-4 generated",
+    "text": "In this paper, we present a comprehensive framework for analyzing causal relationships in complex network structures. Our methodology leverages advanced graph neural network architectures to identify and quantify causal effects while accounting for confounding variables. The proposed approach demonstrates superior performance compared to existing methods, achieving significant improvements across multiple benchmark datasets.",
+    "label": "ai",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-003",
+    "source": "ICML 2024 accepted paper",
+    "text": "The transformer bottleneck in memory-constrained settings remains unresolved. We introduce SlideAttention, which replaces full QK^T with a sliding window plus random global tokens. Memory: O(n) instead of O(n^2). On long-document QA (up to 128k tokens), we match full attention quality with 3.2x speedup on A100s. Code: https://github.com/slideattn/slide",
+    "label": "human",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-004",
+    "source": "GPT-4 generated",
+    "text": "This study introduces a novel attention mechanism designed to address the computational challenges associated with processing long sequences in transformer-based models. By implementing a hybrid approach that combines local windowed attention with global token routing, our method achieves linear memory complexity while maintaining competitive performance across various natural language processing tasks.",
+    "label": "ai",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-005",
+    "source": "PLDI 2024 accepted paper",
+    "text": "Rust's borrow checker rejects 34% of safe programs in our corpus (n=2,847 from crates.io). We formalize the pattern: the checker conflates liveness with uniqueness. Our fix adds a 'lend' qualifier, implemented in rustc fork. Rejected programs: down to 7%. Benchmark: ripgrep compiles unchanged.",
+    "label": "human",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-006",
+    "source": "GPT-4 generated",
+    "text": "Modern programming languages increasingly incorporate sophisticated type systems and memory safety mechanisms to prevent common software vulnerabilities. This paper examines the limitations of current borrow checking implementations and proposes an enhanced framework that extends existing capabilities while preserving performance characteristics.",
+    "label": "ai",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-007",
+    "source": "OSDI 2024 accepted paper",
+    "text": "We built a key-value store that shards by access temperature, not hash prefix. Hot keys migrate to RDMA-enabled NICs; cold keys stay on NVMe. Tail latency p99: 340 us (vs 12 ms for RocksDB). We messed up the YCSB-F workload initially — had to rewrite the generator. Figure 4 shows the bimodal distribution.",
+    "label": "human",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-008",
+    "source": "GPT-4 generated",
+    "text": "This research presents a distributed key-value storage system optimized for heterogeneous memory hierarchies. The proposed architecture dynamically migrates frequently accessed data to high-performance memory tiers while maintaining cold data on persistent storage. Experimental evaluation demonstrates significant reductions in tail latency compared to conventional approaches.",
+    "label": "ai",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-009",
+    "source": "ACL 2024 accepted paper",
+    "text": "Multilingual BERT fails on code-switching: F1 drops 47 points when Spanish+English mix. We add a language-agnostic routing layer. Result: F1 recovers to within 4 points of monolingual. Dataset: 6M tweets from Miami, collected 2019-2023. Ethics: IRB-approved, de-identified.",
+    "label": "human",
+    "domain": "cs"
+  },
+  {
+    "id": "gb-010",
+    "source": "GPT-4 generated",
+    "text": "Pre-trained multilingual language models have demonstrated remarkable capabilities across diverse natural language processing tasks. However, their performance degradation in code-switching scenarios presents a significant challenge. This paper proposes an adaptive routing mechanism that enhances cross-lingual representation learning without requiring extensive task-specific fine-tuning.",
+    "label": "ai",
+    "domain": "cs"
+  }
+]

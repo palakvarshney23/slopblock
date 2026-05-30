@@ -1,0 +1,72 @@
+[
+  {
+    "id": "hc3-001",
+    "source": "reddit/r/AskReddit",
+    "text": "What is the best way to learn programming? I have zero experience and want to build a career in tech.",
+    "label": "human",
+    "domain": "advice"
+  },
+  {
+    "id": "hc3-002",
+    "source": "ChatGPT",
+    "text": "In this comprehensive guide, we will delve into the nuanced approach of learning programming from scratch. It is worth noting that consistent practice and a structured curriculum are paramount to unlocking your potential.",
+    "label": "ai",
+    "domain": "advice"
+  },
+  {
+    "id": "hc3-003",
+    "source": "reddit/r/learnprogramming",
+    "text": "Dude just start with Python. Automate boring stuff book is free online. I learned more from building a discord bot that insulted my friends than from any course lol. StackOverflow is your bible. Also @pythonical on twitter posts sick one-liners.",
+    "label": "human",
+    "domain": "advice"
+  },
+  {
+    "id": "hc3-004",
+    "source": "ChatGPT",
+    "text": "Here are three key takeaways for learning programming. First, choose a beginner-friendly language such as Python. Second, follow a structured roadmap with milestones. Third, engage with the developer community for support and feedback.",
+    "label": "ai",
+    "domain": "advice"
+  },
+  {
+    "id": "hc3-005",
+    "source": "reddit/r/relationship_advice",
+    "text": "My girlfriend of 3 years just told me she doesn't see a future with me. I'm devastated. We have a dog together. What do I do?",
+    "label": "human",
+    "domain": "relationships"
+  },
+  {
+    "id": "hc3-006",
+    "source": "ChatGPT",
+    "text": "Navigating the complexities of a long-term relationship ending requires a multifaceted approach. It is crucial to prioritize self-care, establish clear boundaries regarding shared responsibilities, and seek support from trusted friends or professionals.",
+    "label": "ai",
+    "domain": "relationships"
+  },
+  {
+    "id": "hc3-007",
+    "source": "reddit/r/technology",
+    "text": "Wait so the new M4 MacBook Pro has 48GB unified memory base config? That's insane. My M1 Max with 32GB already swaps when I have 3 Chrome tabs and Docker running. Also the black finish is back apparently? https://apple.com/macbook-pro",
+    "label": "human",
+    "domain": "technology"
+  },
+  {
+    "id": "hc3-008",
+    "source": "ChatGPT",
+    "text": "The latest iteration of Apple's MacBook Pro represents a game-changer in the laptop landscape. With cutting-edge performance and a holistic approach to user experience, this device stands at the forefront of innovation.",
+    "label": "ai",
+    "domain": "technology"
+  },
+  {
+    "id": "hc3-009",
+    "source": "reddit/r/personalfinance",
+    "text": "I make $62k in Cleveland. My rent is $950 for a 1BR. I save about $800/month. Is this good? Should I be investing more? Currently just doing 6% 401k match and $200/month in VTI.",
+    "label": "human",
+    "domain": "finance"
+  },
+  {
+    "id": "hc3-010",
+    "source": "ChatGPT",
+    "text": "In today's rapidly evolving financial landscape, it is important to understand the pivotal role that diversified investment strategies play. By leveraging the power of compound interest and maintaining a holistic approach to savings, individuals can unlock their potential for long-term wealth accumulation.",
+    "label": "ai",
+    "domain": "finance"
+  }
+]
