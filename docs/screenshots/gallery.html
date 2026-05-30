@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlopBlock Screenshot Gallery</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#c9d1d9; --accent:#58a6ff; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  header { text-align:center; padding:40px 20px 20px; border-bottom:1px solid var(--border); }
+  h1 { margin:0; font-size:clamp(24px,3vw,36px); }
+  p { max-width:640px; margin:8px auto 0; color:#8b949e; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; padding:24px; max-width:1200px; margin:0 auto; }
+  .shot { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .shot-header { padding:14px 16px; border-bottom:1px solid var(--border); font-weight:700; font-size:14px; color:var(--accent); }
+  .shot-body { padding:16px; }
+  .browser-mock { background:#010409; border:1px solid #30363d; border-radius:8px; overflow:hidden; }
+  .browser-top { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#161b22; border-bottom:1px solid #30363d; }
+  .dot { width:10px; height:10px; border-radius:50%; }
+  .dot-r { background:#ff5f56; } .dot-y { background:#ffbd2e; } .dot-g { background:#27c93f; }
+  .bar { flex:1; background:#0d1117; border:1px solid #30363d; border-radius:4px; padding:4px 8px; font-size:12px; color:#8b949e; }
+  .content { padding:12px; font-size:13px; }
+  .placeholder { background:#21262d; border:1px dashed #30363d; border-radius:6px; padding:12px; text-align:center; color:#8b949e; margin:6px 0; }
+  .placeholder .label { font-weight:700; color:#ff7b72; margin-bottom:4px; }
+  .real-text { opacity:0.4; text-decoration:line-through; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; background:rgba(88,166,255,0.15); color:var(--accent); margin-left:6px; }
+  .gh-warning { background:#fff8e1; border-left:3px solid #d1242f; padding:8px; margin:6px 0; font-size:12px; color:#1f2328; border-radius:0 4px 4px 0; }
+  footer { text-align:center; color:#8b949e; padding:30px 20px; font-size:13px; border-top:1px solid var(--border); }
+</style>
+</head>
+<body>
+<header>
+  <h1>SlopBlock Screenshot Gallery</h1>
+  <p>Reconstructed UI states showing how SlopBlock surfaces AI-generated slop across tracks. These are HTML/CSS mockups of actual browser states observed during live-fire testing.</p>
+</header>
+
+<div class="grid">
+
+  <div class="shot">
+    <div class="shot-header">Track H — X/Twitter Feed Block</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">x.com/home</div></div>
+        <div class="content">
+          <div class="placeholder">
+            <div class="label">Suspected AI Generated Post — 94%</div>
+            <div style="font-size:12px;">heuristic + model2</div>
+            <div style="margin-top:8px;"><button style="background:#238636;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:12px;">Show post</button></div>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:#8b949e;">Post hidden · 1 click to reveal</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">Engagement-bait thread with list structure and no personal details. Card boundary detection identified the post container.</p>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="shot-header">Track E — SEO Listicle Paragraph Highlight</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">blogspam.ai/best-crm-2026</div></div>
+        <div class="content">
+          <p style="margin:0 0 6px;" class="real-text">In this comprehensive guide we will delve into the rapidly evolving...</p>
+          <div class="placeholder" style="margin:0;">
+            <div class="label">Suspected AI Text — 91%</div>
+            <div style="font-size:12px;">model consensus + heuristic</div>
+            <div style="margin-top:8px;"><button style="background:#238636;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:12px;">Show text</button></div>
+          </div>
+          <p style="margin:6px 0 0;">Real human paragraph with citations and specific numbers passes untouched.</p>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">Full-page text injection via Enhanced Mode (local HTTPS proxy). Inline placeholder replaces only the flagged paragraph.</p>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="shot-header">Track A — GitHub PR Warning Banner</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">github.com/org/repo/pull/42</div></div>
+        <div class="content">
+          <div class="gh-warning">
+            <strong>SlopBlock:</strong> AI-generated content detected (84% confidence · heuristic) — <a href="#" style="color:#0969da;text-decoration:underline;">Dismiss</a>
+          </div>
+          <p style="margin:6px 0 0;" class="real-text">This PR updates the code to improve performance and follow best practices. It is worth noting that...</p>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">Non-destructive warning on hollow PR descriptions. Dismissible so developers retain full control.</p>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="shot-header">Track H — LinkedIn Card Blur</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">linkedin.com/feed</div></div>
+        <div class="content">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="width:32px;height:32px;background:#30363d;border-radius:50%;"></div>
+            <div style="font-size:12px;"><strong>User Name</strong> · 2nd<span class="badge">AI-Slop</span></div>
+          </div>
+          <div class="placeholder">
+            <div class="label">Suspected AI Generated Post — 89%</div>
+            <div style="font-size:12px;">heuristic + stylometric</div>
+            <div style="margin-top:8px;"><button style="background:#238636;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:12px;">Show post</button></div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">LinkedIn "thought leadership" post with zero specifics and LLM opener pattern. Card boundary climbed via role="feed".</p>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="shot-header">Track E/G — Amazon Review Warning</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">amazon.com/dp/B0EXAMPLE</div></div>
+        <div class="content">
+          <div style="font-size:12px;margin-bottom:6px;"><strong>★★★★★</strong> Great product</div>
+          <div class="placeholder" style="margin:0;">
+            <div class="label">Suspected AI Review — 78%</div>
+            <div style="font-size:12px;">heuristic (blocklist)</div>
+            <div style="margin-top:8px;"><button style="background:#238636;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:12px;">Show review</button></div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">Generic 5-star review with no product specifics. Phrase hits and low lexical diversity triggered the flag.</p>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="shot-header">Image — AI Art Overlay</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">reddit.com/r/midjourney</div></div>
+        <div class="content">
+          <div style="width:100%;height:120px;background:#21262d;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+            <div class="placeholder" style="width:90%;margin:0;">
+              <div class="label">Suspected AI Image — 100%</div>
+              <div style="font-size:12px;">URL forensics: cdn.midjourney.com</div>
+              <div style="margin-top:8px;"><button style="background:#238636;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:12px;">Show image</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">Zero-CPU URL pattern match on known AI image CDNs. Instant verdict before the image bytes are even fetched.</p>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="shot-header">YouTube — AI-Disclosed Badge</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">youtube.com/feed</div></div>
+        <div class="content">
+          <div style="width:100%;height:90px;background:#21262d;border-radius:6px;position:relative;opacity:0.35;filter:grayscale(0.7);display:flex;align-items:center;justify-content:center;">
+            <div style="background:rgba(0,0,0,0.7);color:#fff;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:700;">&#x2B22; AI-DISCLOSED</div>
+          </div>
+          <div style="font-size:12px;margin-top:6px;">News Channel · 2.1M views · 1 day ago</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">Creator-declared synthetic content. SlopBlock intercepts the disclosure badge and dims the thumbnail before a click is wasted.</p>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="shot-header">Dashboard — Stats Panel</div>
+    <div class="shot-body">
+      <div class="browser-mock">
+        <div class="browser-top"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="bar">localhost (SlopBlock Dashboard)</div></div>
+        <div class="content">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+            <div style="background:#010409;border:1px solid #30363d;border-radius:6px;padding:10px;">
+              <div style="color:#8b949e;font-size:11px;">Text blocked</div>
+              <div style="font-size:20px;font-weight:800;color:#ff7b72;">47</div>
+            </div>
+            <div style="background:#010409;border:1px solid #30363d;border-radius:6px;padding:10px;">
+              <div style="color:#8b949e;font-size:11px;">Images blocked</div>
+              <div style="font-size:20px;font-weight:800;color:#ff7b72;">12</div>
+            </div>
+            <div style="background:#010409;border:1px solid #30363d;border-radius:6px;padding:10px;">
+              <div style="color:#8b949e;font-size:11px;">YouTube blocked</div>
+              <div style="font-size:20px;font-weight:800;color:#ff7b72;">5</div>
+            </div>
+            <div style="background:#010409;border:1px solid #30363d;border-radius:6px;padding:10px;">
+              <div style="color:#8b949e;font-size:11px;">Ads blocked</div>
+              <div style="font-size:20px;font-weight:800;color:#58a6ff;">1,204</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#8b949e;margin:10px 0 0;">Session counters persisted across page navigations. Users see exactly how much slop was filtered.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  SlopBlock — Slop Scan Hackathon 2026 · <a href="https://">GitHub</a> · <a href=""></a>
+</footer>
+</body>
+</html>
