@@ -1,0 +1,10 @@
+torch
+torchvision
+transformers
+decord
+opencv-python
+scikit-learn
+numpy
+tqdm
+joblib
+xgboost
