@@ -22,10 +22,30 @@ const fs = require("fs");
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const MODELS_DIR = path.join(__dirname, "models");
-const PROBE_PATHS = [
-  path.join(MODELS_DIR, "phaseB_probe.json"),
-  path.join(MODELS_DIR, "phaseA_probe.json"),
-];
+
+function getLatestProbePaths() {
+  // Auto-detect latest versioned probe (phaseB_probe_v2.json, v3, etc.)
+  const paths = [];
+  try {
+    const entries = fs.readdirSync(MODELS_DIR);
+    const versioned = entries
+      .filter(f => f.match(/^phaseB_probe_v\d+\.json$/))
+      .map(f => ({
+        file: f,
+        ver: parseInt(f.match(/v(\d+)/)[1], 10),
+        path: path.join(MODELS_DIR, f)
+      }))
+      .sort((a, b) => b.ver - a.ver);
+    if (versioned.length > 0) {
+      paths.push(versioned[0].path);
+    }
+  } catch (e) {}
+  paths.push(path.join(MODELS_DIR, "phaseB_probe.json"));
+  paths.push(path.join(MODELS_DIR, "phaseA_probe.json"));
+  return paths;
+}
+
+const PROBE_PATHS = getLatestProbePaths();
 
 const DINOV2_MODEL = "Xenova/dinov2-small";  // matches training backbone
 const FAST_FRAMES = 5;     // first-pass (always run)
@@ -55,17 +75,23 @@ function _applyExecutionProvider() {
 
 /**
  * Enable or disable GPU acceleration (DirectML on Windows).
- * Tears down the loaded model so the next init() reloads with the new EP.
+ * Reloads the model immediately with the new execution provider.
  */
-function setGPUEnabled(enabled) {
+async function setGPUEnabled(enabled) {
   if (_useGPU === !!enabled) return;
   _useGPU = !!enabled;
   _applyExecutionProvider();
-  // Force reload on next init()
+  // Force reload with new execution provider
   ready = false;
   processor = null;
   model = null;
-  console.log(`[VideoClassifier] GPU ${_useGPU ? 'enabled' : 'disabled'} — model will reload`);
+  console.log(`[VideoClassifier] GPU ${_useGPU ? 'enabled' : 'disabled'} — reloading model...`);
+  try {
+    await init();
+    console.log(`[VideoClassifier] Model reloaded with ${_useGPU ? 'DirectML' : 'CPU'}`);
+  } catch (e) {
+    console.error(`[VideoClassifier] Failed to reload model with ${_useGPU ? 'DirectML' : 'CPU'}:`, e.message);
+  }
 }
 
 function isGPUEnabled() {
@@ -118,7 +144,12 @@ async function embedFrames(frames) {
   // frames: array of base64 JPEG strings
   const results = [];
   for (const frameB64 of frames) {
-    const buffer = Buffer.from(frameB64, "base64");
+    // Strip data URI prefix if present (content.js sends data:image/jpeg;base64,...)
+    let b64Payload = frameB64;
+    if (b64Payload.includes(',')) {
+      b64Payload = b64Payload.split(',')[1];
+    }
+    const buffer = Buffer.from(b64Payload, "base64");
     const raw = await RawImage.fromBlob(
       new (require("node:buffer").Blob)([buffer], { type: "image/jpeg" })
     );
@@ -397,10 +428,28 @@ function startServer(port = 8083) {
 // ── Backward-compatible wrappers for existing service.js / main.js ───────────
 
 async function loadVideoModel(modelDir) {
-  // Update probe paths to the provided model directory
+  // Update probe paths to the provided model directory with auto-detect
   if (modelDir) {
-    PROBE_PATHS[0] = path.join(modelDir, "phaseB_probe.json");
-    PROBE_PATHS[1] = path.join(modelDir, "phaseA_probe.json");
+    const newPaths = [];
+    try {
+      const entries = fs.readdirSync(modelDir);
+      const versioned = entries
+        .filter(f => f.match(/^phaseB_probe_v\d+\.json$/))
+        .map(f => ({
+          file: f,
+          ver: parseInt(f.match(/v(\d+)/)[1], 10),
+          path: path.join(modelDir, f)
+        }))
+        .sort((a, b) => b.ver - a.ver);
+      if (versioned.length > 0) {
+        newPaths.push(versioned[0].path);
+      }
+    } catch (e) {}
+    newPaths.push(path.join(modelDir, "phaseB_probe.json"));
+    newPaths.push(path.join(modelDir, "phaseA_probe.json"));
+    // Replace PROBE_PATHS contents in-place
+    PROBE_PATHS.length = 0;
+    PROBE_PATHS.push(...newPaths);
   }
   try {
     await init();

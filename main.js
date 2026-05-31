@@ -288,7 +288,7 @@ async function toggleProxy() {
   logger.debugLog(`Proxy ${state.PROXY_ENABLED ? 'enabled' : 'disabled'}`);
 }
 
-function toggleVideoDetection() {
+async function toggleVideoDetection() {
   state.VIDEO_DETECTION_ENABLED = !state.VIDEO_DETECTION_ENABLED;
   _saveSettings({ defaultVideoDetection: state.VIDEO_DETECTION_ENABLED });
   safeSend('video-detection-status', state.VIDEO_DETECTION_ENABLED);
@@ -297,7 +297,7 @@ function toggleVideoDetection() {
     const modelDir = app.isPackaged
       ? path.join(process.resourcesPath, 'models')
       : path.join(__dirname, 'models');
-    videoClassifier.loadVideoModel(modelDir);
+    await videoClassifier.loadVideoModel(modelDir);
     safeSend('video-probe-ready', videoClassifier.isVideoClassifierReady());
   }
 }
@@ -359,8 +359,11 @@ function createWindow() {
     // Send all initial state to the renderer
     safeSend('filter-status',          state.FILTER_ENABLED);
     safeSend('image-detection-status', state.IMAGE_DETECTION_ENABLED);
+    logger.debugLog(`[Main] VIDEO_DETECTION_ENABLED=${state.VIDEO_DETECTION_ENABLED}, extensionInstalled=${isExtensionInstalled()}, probeReady=${videoClassifier.isVideoClassifierReady()}`);
     safeSend('video-detection-status', state.VIDEO_DETECTION_ENABLED);
-    safeSend('video-probe-ready',      videoClassifier.isVideoClassifierReady());
+    const probeReady = videoClassifier.isVideoClassifierReady();
+    logger.debugLog(`[Main] Sending video-probe-ready: ${probeReady}`);
+    safeSend('video-probe-ready',      probeReady);
     safeSend('youtube-filter-status',  state.YOUTUBE_FILTER_ENABLED);
     safeSend('proxy-status',           state.PROXY_ENABLED);
     safeSend('filter-count',           state.filteredCount);
@@ -381,7 +384,7 @@ function createWindow() {
     });
 
     safeSend('gpu-status', {
-      ...gpuInfo,
+      ...gpuDetector.getGPUStatus(),
       enabled: videoClassifier.isGPUEnabled(),
     });
 
@@ -425,10 +428,19 @@ app.whenReady().then(async () => {
   counts.init(userData);
   config.init(userData);
 
-  const modelDir = app.isPackaged
-    ? path.join(process.resourcesPath, 'models')
-    : path.join(__dirname, 'models');
-  videoClassifier.loadVideoModel(modelDir);
+    const modelDir = app.isPackaged
+      ? path.join(process.resourcesPath, 'models')
+      : path.join(__dirname, 'models');
+    try {
+      logger.debugLog('[Main] Loading video model...');
+      await videoClassifier.loadVideoModel(modelDir);
+      logger.debugLog(`[Main] Video model loaded, ready=${videoClassifier.isVideoClassifierReady()}`);
+      safeSend('video-probe-ready', videoClassifier.isVideoClassifierReady());
+    } catch (e) {
+      logger.logError(e);
+      logger.debugLog(`[Main] Video model failed: ${e.message}`);
+      safeSend('video-probe-ready', false);
+    }
 
   // Detect GPU and notify renderer
   let gpuInfo = { available: false, name: null, type: null, vram: 0 };
@@ -455,11 +467,11 @@ app.whenReady().then(async () => {
   state.TRUSTED_PATTERNS         = settings.TRUSTED_PATTERNS || [];
   app.setLoginItemSettings({ openAtLogin: settings.launchAtStartup, openAsHidden: true });
 
-  // Apply persisted GPU preference if a GPU is actually available
-  if (settings.gpuEnabled && gpuInfo.available) {
-    videoClassifier.setGPUEnabled(true);
-    logger.debugLog('GPU acceleration enabled (DirectML)');
-  }
+    // Apply persisted GPU preference if a GPU is actually available
+    if (settings.gpuEnabled && gpuInfo.available) {
+      await videoClassifier.setGPUEnabled(true);
+      logger.debugLog('GPU acceleration enabled (DirectML)');
+    }
 
   // Seed in-memory counters from persisted all-time totals
   const savedCounts       = counts.load();
@@ -560,9 +572,9 @@ ipcMain.on('toggle-gpu', async () => {
     safeSend('gpu-status', { ...gpuInfo, enabled: false });
     return;
   }
-  const newState = !videoClassifier.isGPUEnabled();
-  videoClassifier.setGPUEnabled(newState);
-  _saveSettings({ gpuEnabled: newState });
+    const newState = !videoClassifier.isGPUEnabled();
+    await videoClassifier.setGPUEnabled(newState);
+    _saveSettings({ gpuEnabled: newState });
   safeSend('gpu-status', { ...gpuInfo, enabled: newState });
   safeSend('status-update', `GPU acceleration ${newState ? 'enabled' : 'disabled'} (${gpuInfo.name})`);
   logger.debugLog(`GPU toggled: ${newState ? 'ON' : 'OFF'} (${gpuInfo.name})`);

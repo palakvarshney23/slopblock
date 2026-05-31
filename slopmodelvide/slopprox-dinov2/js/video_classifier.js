@@ -22,10 +22,30 @@ const fs = require("fs");
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const MODELS_DIR = path.join(__dirname, "models");
-const PROBE_PATHS = [
-  path.join(MODELS_DIR, "phaseB_probe.json"),
-  path.join(MODELS_DIR, "phaseA_probe.json"),
-];
+
+function getLatestProbePaths() {
+  // Auto-detect latest versioned probe (phaseB_probe_v2.json, v3, etc.)
+  const paths = [];
+  try {
+    const entries = fs.readdirSync(MODELS_DIR);
+    const versioned = entries
+      .filter(f => f.match(/^phaseB_probe_v\d+\.json$/))
+      .map(f => ({
+        file: f,
+        ver: parseInt(f.match(/v(\d+)/)[1], 10),
+        path: path.join(MODELS_DIR, f)
+      }))
+      .sort((a, b) => b.ver - a.ver);
+    if (versioned.length > 0) {
+      paths.push(versioned[0].path);
+    }
+  } catch (e) {}
+  paths.push(path.join(MODELS_DIR, "phaseB_probe.json"));
+  paths.push(path.join(MODELS_DIR, "phaseA_probe.json"));
+  return paths;
+}
+
+const PROBE_PATHS = getLatestProbePaths();
 
 const DINOV2_MODEL = "Xenova/dinov2-small";  // matches training backbone
 const FAST_FRAMES = 5;     // first-pass (always run)
@@ -77,7 +97,12 @@ async function init() {
 async function embedFrames(frames) {
   // Transformers.js feature-extraction returns (1, seq_len, 384)
   // CLS token is at index 0
-  const output = await extractor(frames, {
+  // Strip data URI prefixes if present (content.js sends data:image/jpeg;base64,...)
+  const cleanFrames = frames.map(f => {
+    if (typeof f === 'string' && f.includes(',')) return f.split(',')[1];
+    return f;
+  });
+  const output = await extractor(cleanFrames, {
     pooling: "none",          // we extract CLS manually
     normalize: false,
   });
