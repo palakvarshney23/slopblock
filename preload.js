@@ -6,7 +6,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const SEND_CHANNELS = [
   'window-minimize', 'window-close',
   'toggle-filter', 'toggle-image-detection', 'toggle-video-detection', 'toggle-youtube-filter',
-  'toggle-proxy',
+  'toggle-proxy', 'toggle-gpu',
   'reset-all', 'open-debug-log', 'reinstall-cert',
   'install-extension', 'install-extension-firefox', 'mark-extension-installed', 'open-extension-folder', 'open-external',
   'set-setting',
@@ -43,6 +43,7 @@ const RECEIVE_CHANNELS = [
   'video-probe-ready',
   'config-loaded',
   'model-counts',
+  'gpu-status',
 ];
 
 contextBridge.exposeInMainWorld('electronAPI', {

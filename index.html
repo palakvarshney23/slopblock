@@ -1835,6 +1835,13 @@
           </div>
           <div id="stgTrayTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
         </div>
+        <div class="settings-row" id="gpuRow" style="display:none;">
+          <div>
+            <div class="settings-row-title">GPU acceleration</div>
+            <div id="gpuSub" class="settings-row-sub">DirectML</div>
+          </div>
+          <div id="stgGpuTrack" class="toggle-track"><div class="toggle-thumb"></div></div>
+        </div>
         <button id="checkUpdatesBtn" class="settings-action-btn">CHECK FOR UPDATES</button>
       </div>
 
@@ -2697,6 +2704,27 @@ window.addEventListener('load', () => {
       uiSound('tap');
       api.send('set-setting', { key, value: isOn });
     });
+  });
+
+  // ── GPU toggle ──────────────────────────────────────────────────
+  const _gpuRow      = document.getElementById('gpuRow');
+  const _gpuSub      = document.getElementById('gpuSub');
+  const _stgGpuTrack = document.getElementById('stgGpuTrack');
+
+  _stgGpuTrack.addEventListener('click', function () {
+    if (this.classList.contains('disabled')) { uiSound('warning'); return; }
+    uiSound('tap');
+    api.send('toggle-gpu');
+  });
+
+  api.on('gpu-status', ({ available, name, enabled }) => {
+    if (available) {
+      _gpuRow.style.display = 'flex';
+      _stgGpuTrack.classList.toggle('on', enabled);
+      _gpuSub.textContent = name || 'DirectML';
+    } else {
+      _gpuRow.style.display = 'none';
+    }
   });
 
   api.on('settings-loaded', settings => {

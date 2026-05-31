@@ -15,6 +15,7 @@ const classifier       = require('./classifier');
 const videoClassifier  = require('./video_classifier');
 const proxy            = require('./proxy');
 const service          = require('./service');
+const gpuDetector      = require('./gpu_detector');
 
 process.on('uncaughtException',  err => logger.logError(err));
 process.on('unhandledRejection', err => logger.logError(err));
@@ -56,6 +57,7 @@ const SETTINGS_DEFAULTS = {
   defaultYoutubeFilter:  true,
   imageModelsReady:      false,
   extensionInstalled:    false,
+  gpuEnabled:            false,
   PROXY_ENABLED:   false,
   BYPASS_DOMAINS:  state.BYPASS_DOMAINS.slice(),
   TRUSTED_PATTERNS: [],
@@ -378,6 +380,11 @@ function createWindow() {
       video: videoClassifier.VIDEO_MODEL_TOTAL,
     });
 
+    safeSend('gpu-status', {
+      ...gpuInfo,
+      enabled: videoClassifier.isGPUEnabled(),
+    });
+
     if (state.IMAGE_DETECTION_ENABLED && !classifier.isImageModelReady())
       _startImageModelLoad();
 
@@ -423,6 +430,15 @@ app.whenReady().then(async () => {
     : path.join(__dirname, 'models');
   videoClassifier.loadVideoModel(modelDir);
 
+  // Detect GPU and notify renderer
+  let gpuInfo = { available: false, name: null, type: null, vram: 0 };
+  try {
+    gpuInfo = await gpuDetector.detectGPU();
+    logger.debugLog(`GPU detected: ${gpuInfo.name || 'none'} (available=${gpuInfo.available})`);
+  } catch (e) {
+    logger.logError(e);
+  }
+
   // Load and apply persisted settings
   const settings = _getSettings();
   _minimizeToTray                = settings.minimizeToTray;
@@ -438,6 +454,12 @@ app.whenReady().then(async () => {
   state.BYPASS_DOMAINS           = settings.BYPASS_DOMAINS || state.BYPASS_DOMAINS;
   state.TRUSTED_PATTERNS         = settings.TRUSTED_PATTERNS || [];
   app.setLoginItemSettings({ openAtLogin: settings.launchAtStartup, openAsHidden: true });
+
+  // Apply persisted GPU preference if a GPU is actually available
+  if (settings.gpuEnabled && gpuInfo.available) {
+    videoClassifier.setGPUEnabled(true);
+    logger.debugLog('GPU acceleration enabled (DirectML)');
+  }
 
   // Seed in-memory counters from persisted all-time totals
   const savedCounts       = counts.load();
@@ -530,6 +552,21 @@ ipcMain.on('toggle-youtube-filter',  () => {
   logger.debugLog(`YouTube filter ${state.YOUTUBE_FILTER_ENABLED ? 'on' : 'off'}`);
 });
 ipcMain.on('toggle-proxy',           toggleProxy);
+
+ipcMain.on('toggle-gpu', async () => {
+  const gpuInfo = gpuDetector.getGPUStatus();
+  if (!gpuInfo.available) {
+    safeSend('status-update', 'No GPU detected — cannot enable acceleration');
+    safeSend('gpu-status', { ...gpuInfo, enabled: false });
+    return;
+  }
+  const newState = !videoClassifier.isGPUEnabled();
+  videoClassifier.setGPUEnabled(newState);
+  _saveSettings({ gpuEnabled: newState });
+  safeSend('gpu-status', { ...gpuInfo, enabled: newState });
+  safeSend('status-update', `GPU acceleration ${newState ? 'enabled' : 'disabled'} (${gpuInfo.name})`);
+  logger.debugLog(`GPU toggled: ${newState ? 'ON' : 'OFF'} (${gpuInfo.name})`);
+});
 
 ipcMain.on('reinstall-cert', () => installCert(false));
 

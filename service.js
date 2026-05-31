@@ -6,7 +6,7 @@
 const http   = require('http');
 const crypto = require('crypto');
 const { isAiSlop, isAiImage, isAiImageFromBuffer } = require('./classifier');
-const { classifyVideoFrames, isVideoClassifierReady } = require('./video_classifier');
+const { classifyVideoFrames, isVideoClassifierReady, classifyVideo } = require('./video_classifier');
 const { debugLog, logError } = require('./logger');
 const state  = require('./state');
 const counts = require('./counts');
@@ -320,24 +320,36 @@ function start(safeSend) {
         }
 
         try {
-          const buffers = [];
+          const frames5 = [];
           for (const frame of payload.frames) {
             if (typeof frame !== 'string' || !frame.startsWith('data:image/')) continue;
-            const base64 = frame.split(',')[1];
-            if (!base64) continue;
-            buffers.push(Buffer.from(base64, 'base64'));
+            frames5.push(frame);
           }
-          if (!buffers.length) {
+          if (!frames5.length) {
             res.writeHead(400); res.end(); return;
+          }
+
+          const frames8 = [];
+          if (Array.isArray(payload.frames8)) {
+            for (const frame of payload.frames8) {
+              if (typeof frame !== 'string' || !frame.startsWith('data:image/')) continue;
+              frames8.push(frame);
+            }
           }
 
           state.imagesAnalyzed++;
           safeSend('images-analyzed', state.imagesAnalyzed);
           counts.schedule(state);
 
-          const { score, confidence, method, skipped } = await classifyVideoFrames(buffers);
+          const result = await classifyVideo(frames5, frames8.length ? frames8 : null);
+          const skipped = !isVideoClassifierReady();
+          const score = result.score ?? 0;
+          const confidence = Math.round(score * 100);
           const threshold = config.get('videoWarnThreshold');
-          const isAiVideo = !skipped && isVideoClassifierReady() && score >= threshold;
+          const isAiVideo = !skipped && score >= threshold;
+          const method = `dinov2-${result.phase?.toLowerCase() || 'unknown'}`;
+          const framesAnalyzed = result.twoStage ? frames8.length : frames5.length;
+
           if (isAiVideo) {
             state.imagesBlocked++;
             safeSend('images-count', state.imagesBlocked);
@@ -350,14 +362,17 @@ function start(safeSend) {
             target: 'video clip',
             confidence,
           });
-          debugLog(`Video [${isAiVideo ? 'AI' : 'real'} ${confidence}% method=${method} frames=${buffers.length} skipped=${!!skipped}]`);
+          debugLog(`Video [${isAiVideo ? 'AI' : 'real'} ${confidence}% method=${method} frames=${framesAnalyzed} twoStage=${result.twoStage} phase=${result.phase} skipped=${skipped}]`);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             isAiVideo,
             confidence,
             method,
-            framesAnalyzed: buffers.length,
-            skipped: !!skipped,
+            framesAnalyzed,
+            skipped,
+            phase: result.phase,
+            twoStage: result.twoStage,
+            latencyMs: result.latencyMs,
           }));
         } catch (err) {
           logError(err);

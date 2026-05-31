@@ -99,7 +99,10 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
     _ensureToken()
       .then(() => fetch(BASE + '/classify-video', {
         method: 'POST',
-        body: JSON.stringify({ frames: msg.frames }),
+        body: JSON.stringify({
+          frames: msg.frames,
+          ...(Array.isArray(msg.frames8) && msg.frames8.length ? { frames8: msg.frames8 } : {}),
+        }),
         headers: { ..._tokenHeaders(), 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(30000),
       }))

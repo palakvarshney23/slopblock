@@ -59,7 +59,7 @@
   const CAPTION_MAX_BUFFER = 400;
   const VIDEO_META_MIN_CONFIDENCE = 90;
   const CAPTION_MIN_CONFIDENCE = 90;
-  const FRAME_SAMPLE_COUNT = 5;
+  const FRAME_SAMPLE_COUNT = 8;
   const FRAME_SAMPLE_WINDOW_SEC = 5;
   const FRAME_SKIP_START_SEC = 1.5;
   const FRAME_SEEK_TIMEOUT_MS = 1500;
@@ -1690,8 +1690,14 @@ function getPagePriorAdjustment() {
 
     if (!frames.length) return;
 
+    if (!frames.length) return;
+
     try {
-      const resp = await chrome.runtime.sendMessage({ type: 'classifyVideo', frames });
+      const resp = await chrome.runtime.sendMessage({
+        type: 'classifyVideo',
+        frames: frames.slice(0, 5),
+        frames8: frames,
+      });
       const data = resp?.data || {};
       const conf = data.confidence || 0;
       const isAi = !!data.isAiVideo && !data.skipped && conf >= videoWarnConf;
@@ -1700,7 +1706,7 @@ function getPagePriorAdjustment() {
         isAi,
         avgConf: conf,
         screenshotVeto: !!data.skipped,
-        details: [{ conf, style: 'clip-probe', ai: isAi, skipped: !!data.skipped }],
+        details: [{ conf, style: `dinov2-${data.phase || 'a'}`, ai: isAi, skipped: !!data.skipped, twoStage: data.twoStage }],
       });
     } catch (err) {
       _SF_DEBUG('video-frame-classify', err);
