@@ -188,6 +188,44 @@ async function embedVideoBuffers(buffers) {
   return _poolEmbeddings(embeddings);
 }
 
+function _dataUriToBuffer(dataUri) {
+  const b64 = dataUri.includes(',') ? dataUri.split(',')[1] : dataUri;
+  return Buffer.from(b64, 'base64');
+}
+
+/** Base64 data-URI frames (extension / service.js API). */
+async function classifyVideo(frames5, _frames8 = null) {
+  if (!Array.isArray(frames5) || !frames5.length) {
+    return {
+      score: 0,
+      label: 'REAL',
+      phase: 'CLIP',
+      twoStage: false,
+      latencyMs: 0,
+      threshold: getVideoThreshold(),
+    };
+  }
+  const buffers = frames5.map(_dataUriToBuffer);
+  const r = await classifyVideoFrames(buffers);
+  const score = r.score ?? 0;
+  return {
+    score,
+    label: score >= getVideoThreshold() ? 'AI_GENERATED' : 'REAL',
+    phase: 'CLIP',
+    twoStage: false,
+    latencyMs: 0,
+    threshold: getVideoThreshold(),
+  };
+}
+
+async function setGPUEnabled(_enabled) {
+  // CLIP path uses Transformers.js CPU/DML only via the DINOv2 stack; no-op here.
+}
+
+function isGPUEnabled() {
+  return false;
+}
+
 async function classifyVideoFrames(buffers) {
   if (!Array.isArray(buffers) || !buffers.length) {
     return { score: 0, confidence: 0, method: 'clip-linear-probe', skipped: true };
@@ -234,6 +272,9 @@ module.exports = {
   getVideoBlockThreshold,
   embedVideoBuffers,
   classifyVideoFrames,
+  classifyVideo,
+  setGPUEnabled,
+  isGPUEnabled,
   VIDEO_MODEL_TOTAL,
   DEFAULT_CLIP_MODEL,
 };

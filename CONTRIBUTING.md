@@ -2,6 +2,10 @@
 
 Thank you for your interest in improving SlopBlock! This document will get you up and running in minutes.
 
+[![CI](https://github.com/palakvarshney23/slopblock/actions/workflows/ci.yml/badge.svg)](https://github.com/palakvarshney23/slopblock/actions/workflows/ci.yml)
+
+**Judges evaluating the hackathon:** use [`JUDGES.md`](JUDGES.md) instead of this file.
+
 ---
 
 ## Quick Start
@@ -21,8 +25,9 @@ npm install
 npm start          # Electron dev mode with hot reload
 
 # 5. Run tests
-npm test           # Jest test suite
+npm test           # Jest test suite (74 tests)
 npm run test:coverage  # With coverage report
+npm run test:marketplace  # Track G bake-off
 ```
 
 **Requirements:** Node.js 18+ · Windows (primary target) · Git LFS

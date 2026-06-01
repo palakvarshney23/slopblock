@@ -1,0 +1,184 @@
+[
+  {
+    "id": "g-ai-01",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "This product is amazing! Five stars! Highly recommend! A total game changer. Must-have purchase. Works perfectly.",
+    "context": { "stars": 5, "verifiedPurchase": false, "productTitle": "Wireless Ergonomic Mouse MX-450", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-02",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Exceeded my expectations. Great value for money. Arrived quickly. Could not be happier with this purchase.",
+    "context": { "stars": 5, "verifiedPurchase": false, "productTitle": "Stainless Steel Water Bottle 32oz", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-03",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Amazing product changed my life. Highly recommended. Perfect gift. Excellent quality. Worth every penny.",
+    "context": { "stars": 5, "verifiedPurchase": false, "productTitle": "Bluetooth Speaker Portable", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-04",
+    "label": "ai",
+    "source": "amazon",
+    "text": "This product is amazing. It changed my life. Highly recommend to anyone. Five stars without hesitation.",
+    "context": { "stars": 5, "verifiedPurchase": false, "productTitle": "USB-C Hub 7-in-1", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-05",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Pleasantly surprised by the quality. Top notch. No complaints. Would buy again. Fast shipping.",
+    "context": { "stars": 5, "verifiedPurchase": false, "productTitle": "Kitchen Knife Set Professional", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-06",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "I recently discovered this gem. Must-have for everyone. Five stars. Highly recommend this product.",
+    "context": { "stars": 5, "verifiedPurchase": false, "productTitle": "Yoga Mat Extra Thick", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-07",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Amazing product exceeded expectations highly recommend five stars best purchase ever wonderful quality",
+    "context": { "stars": 5, "productTitle": "Phone Case Clear", "siblingReviewTexts": ["Amazing product exceeded expectations highly recommend five stars best purchase ever excellent quality"] }
+  },
+  {
+    "id": "g-ai-08",
+    "label": "ai",
+    "source": "ebay",
+    "text": "Exactly as described. Great seller. Fast delivery. Perfect product. Five stars. Highly recommend.",
+    "context": { "stars": 5, "verifiedPurchase": false, "productTitle": "Vintage Watch Band Leather", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-09",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Love this product! Game changer! Must-have! Absolutely love it! Could not be happier!",
+    "context": { "stars": 5, "productTitle": "Desk Lamp LED", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-10",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Works great. Amazing quality. Highly recommended. Five stars. Perfect product for the price.",
+    "context": { "stars": 5, "productTitle": "Running Shoes Men Size 10", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-01",
+    "label": "human",
+    "source": "amazon",
+    "text": "This USB-C hub works well at my desk. I use it every day for work and travel. Verified purchase — reliable hub for my laptop and passes 4K to my Dell monitor.",
+    "context": { "stars": 5, "verifiedPurchase": true, "productTitle": "USB-C Hub 7-in-1 Adapter", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-02",
+    "label": "human",
+    "source": "amazon",
+    "text": "After 3 weeks the left click started double-firing. Returned it because the MX-450 scroll wheel also feels mushy compared to my old Logitech.",
+    "context": { "stars": 2, "verifiedPurchase": true, "productTitle": "Wireless Ergonomic Mouse MX-450", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-03",
+    "label": "human",
+    "source": "synthetic",
+    "text": "Installed on a 2021 MacBook Pro — HDMI flickers at 4K60 unless I use the included power pass-through. Fine for travel though.",
+    "context": { "stars": 4, "verifiedPurchase": true, "productTitle": "USB-C Hub 7-in-1 Adapter", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-04",
+    "label": "human",
+    "source": "ebay",
+    "text": "Band fits my Seiko SKX007 with 22mm lugs but needed an extra spring bar. Leather is stiff for the first week.",
+    "context": { "stars": 4, "verifiedPurchase": true, "productTitle": "Vintage Watch Band Leather 22mm", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-05",
+    "label": "human",
+    "source": "synthetic",
+    "text": "Compared to the Anker hub I returned, this one runs cooler and my Samsung monitor wakes reliably from sleep.",
+    "context": { "stars": 5, "verifiedPurchase": true, "productTitle": "USB-C Hub 7-in-1", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-06",
+    "label": "human",
+    "source": "amazon",
+    "text": "Bottle keeps ice 24h in Texas summer. The 32oz size barely fits my car cup holder — measure yours first.",
+    "context": { "stars": 4, "verifiedPurchase": true, "productTitle": "Stainless Steel Water Bottle 32oz", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-07",
+    "label": "human",
+    "source": "synthetic",
+    "text": "Speaker distorts above 80% volume on bass-heavy tracks. Good for podcasts in the shower though.",
+    "context": { "stars": 3, "verifiedPurchase": true, "productTitle": "Bluetooth Speaker Portable", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-08",
+    "label": "human",
+    "source": "synthetic",
+    "text": "Knives arrived sharp. The 8-inch chef heel chipped when I dropped it on tile — steel is harder than my Victorinox.",
+    "context": { "stars": 4, "verifiedPurchase": true, "productTitle": "Kitchen Knife Set Professional", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-09",
+    "label": "human",
+    "source": "amazon",
+    "text": "Used it for daily vinyasa for a month. Grippy when sweaty but the alignment lines wore off near the top.",
+    "context": { "stars": 4, "verifiedPurchase": true, "productTitle": "Yoga Mat Extra Thick", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-10",
+    "label": "human",
+    "source": "synthetic",
+    "text": "Model B0XYZ fits iPhone 15 Pro with MagSafe charger — camera cutout is flush. Yellowed slightly after 2 months in pocket.",
+    "context": { "stars": 4, "verifiedPurchase": true, "productTitle": "Phone Case Clear iPhone 15", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-11",
+    "label": "human",
+    "source": "amazon",
+    "text": "Runs narrow — order half size up if you have wide feet. Good for 5K but arch support is minimal on longer runs.",
+    "context": { "stars": 3, "verifiedPurchase": true, "productTitle": "Running Shoes Men Size 10", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-12",
+    "label": "human",
+    "source": "synthetic",
+    "text": "Lamp arm sags after adjusting angle twice a day. Light temperature is accurate at 4000K per my meter.",
+    "context": { "stars": 3, "verifiedPurchase": true, "productTitle": "Desk Lamp LED Adjustable", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-11",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Perfect product. Amazing quality. Five stars. Highly recommend. Great value. Fast shipping. Love it.",
+    "context": { "stars": 5, "productTitle": "Coffee Maker Drip 12 Cup", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-ai-12",
+    "label": "ai",
+    "source": "synthetic",
+    "text": "Exceeded expectations! Must-have! Game changer! Best purchase! Worth every penny!",
+    "context": { "stars": 5, "productTitle": "Electric Kettle Glass", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-13",
+    "label": "human",
+    "source": "amazon",
+    "text": "This product is amazing and I love it — sounds cheesy but the hub saved my presentation when the room only had HDMI.",
+    "context": { "stars": 5, "verifiedPurchase": true, "productTitle": "USB-C Hub 7-in-1", "siblingReviewTexts": [] }
+  },
+  {
+    "id": "g-hu-14",
+    "label": "human",
+    "source": "synthetic",
+    "text": "Shipping was slow (9 days to rural VT) but the kettle boils 1.7L in about 4 minutes on 120V.",
+    "context": { "stars": 4, "verifiedPurchase": true, "productTitle": "Electric Kettle Glass 1.7L", "siblingReviewTexts": [] }
+  }
+]

@@ -79,6 +79,14 @@ const DEFAULTS = {
   // videoBlockThreshold: confidence (0–1) for strong frame-only block tier.
   videoBlockThreshold:  0.65,
 
+  // ── Marketplace review detection (Track G) ─────────────────────
+  reviewTextMinLength:  35,
+  reviewShortLength:    160,
+  reviewShortGateCap:   0.55,
+  reviewThreshold:      0.62,
+  reviewMinReasons:     2,
+  reviewModelWeight:    0.65,
+
   // ── Performance ────────────────────────────────────────────────
   // Token-bucket rate limits for the local classification API.
   // These protect the model from being flooded; most users won't need to change them.

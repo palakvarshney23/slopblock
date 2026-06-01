@@ -61,37 +61,65 @@ async function testDirectML() {
 }
 
 /**
- * Detect available GPU and test DirectML support.
+ * Detect available GPU and optionally test DirectML support.
  *
- * @returns {Promise<{available: boolean, name: string|null, type: 'nvidia'|'directml'|null, vram: number}>}
+ * @param {{ quick?: boolean }} [opts]
+ *   quick=true — nvidia-smi only (~100ms). Skips testDirectML (loads a full ONNX model).
+ *   quick=false — full probe including DirectML (slow on first run).
+ * @returns {Promise<{available: boolean, name: string|null, type: 'nvidia'|'directml'|null, vram: number, dmlTested?: boolean}>}
  */
-async function detectGPU() {
-  if (_cachedGPU) return _cachedGPU;
+async function detectGPU(opts = {}) {
+  const quick = !!opts.quick;
+  if (_cachedGPU) {
+    if (quick) return _cachedGPU;
+    if (_cachedGPU.dmlTested) return _cachedGPU;
+  }
 
   const result = {
     available: false,
     name: null,
     type: null,
     vram: 0,
+    dmlTested: !quick,
   };
 
-  // 1. Try NVIDIA detection
   const nvidia = await _detectNvidia();
   if (nvidia) {
     result.name = nvidia.name;
     result.vram = nvidia.vram;
     result.type = 'nvidia';
+    // NVIDIA present — likely DML-capable on Windows; avoid blocking startup test.
+    if (quick) {
+      result.available = true;
+      _cachedGPU = result;
+      return result;
+    }
   }
 
-  // 2. Test DirectML (works on Win10+ with any DX12 GPU)
+  if (!quick) {
+    const dmlWorks = await testDirectML();
+    if (dmlWorks) {
+      result.available = true;
+      if (!result.name) result.name = 'DirectML-compatible GPU';
+      if (!result.type) result.type = 'directml';
+    }
+    result.dmlTested = true;
+  }
+
+  _cachedGPU = result;
+  return result;
+}
+
+/** Run the expensive DirectML load test (call after UI is up). */
+async function detectDirectML() {
+  const base = await detectGPU({ quick: true });
+  if (base.dmlTested && base.available) return base;
   const dmlWorks = await testDirectML();
+  const result = { ...base, dmlTested: true, available: base.available || dmlWorks };
   if (dmlWorks) {
-    result.available = true;
-    // If we didn't get a name from nvidia-smi, try a generic label
     if (!result.name) result.name = 'DirectML-compatible GPU';
     if (!result.type) result.type = 'directml';
   }
-
   _cachedGPU = result;
   return result;
 }
@@ -105,6 +133,7 @@ function getGPUStatus() {
 
 module.exports = {
   detectGPU,
+  detectDirectML,
   testDirectML,
   getGPUStatus,
 };

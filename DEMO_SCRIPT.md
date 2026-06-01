@@ -1,135 +1,94 @@
-# SlopBlock — 2-Minute Demo Video Script
+# SlopBlock — Demo Video Script (2–3 minutes)
 
-**Title:** SlopBlock Catching Real AI Slop in the Wild
-**Target Length:** 2:15
-**Format:** Screen recording + voiceover (no face required)
-**Resolution:** 1920×1080, 60fps
+Record this for the hackathon submission. Target length: **2:30–3:00**. Show real UI, not slides.
 
----
-
-## Scene 1: Hook (0:00–0:10)
-
-**Visual:**
-- Black screen. White text appears one line at a time:
-  - "The internet has a quality problem."
-  - "AI-generated slop is everywhere."
-  - "Nobody is asking 'was this made with AI?'"
-  - "The question is: did anyone actually check it before publishing?"
-- Cut to the SlopBlock logo + tagline: "Reclaim the internet from slop."
-
-**Audio:**
-> "Every day, millions of AI-generated posts, articles, and images flood the web. The question isn't whether AI was used — it's whether a human ever reviewed the output. This is SlopBlock."
+**Before recording:**
+```bash
+git lfs pull && npm install && npm run demo
+```
+Confirm green **“Service connected”** in `demo.html`. Optionally have extension loaded on X or Amazon for the live-browsing beat.
 
 ---
 
-## Scene 2: Social Feed — Track H (0:10–0:40)
+## Video link (fill in after upload)
 
-**Visual:**
-- Chrome window. Navigate to X/Twitter feed (prepared demo account or public feed).
-- Scroll. Watch as SlopBlock placeholders replace AI-looking posts in real time.
-- Highlight one placeholder: "Suspected AI Generated Post — 94% confidence · heuristic + model2"
-- Click the "Show post" reveal button. The original text appears.
-- Click again to hide.
+| Platform | URL |
+|----------|-----|
+| **YouTube / Loom / Drive** | `PASTE_DEMO_VIDEO_URL_HERE` |
 
-**Audio:**
-> "On social media, SlopBlock intercepts AI-generated engagement bait before you waste a click. It runs entirely on your machine — no text ever leaves your browser. Here, a thread that restates its own heading three different ways is flagged at ninety-four percent confidence. One click to reveal, one click to hide."
+Also update: [`SUBMISSION.md`](SUBMISSION.md) · [`README.md`](README.md#demo-video)
 
 ---
 
-## Scene 3: LinkedIn + Reddit — Cross-Track H (0:40–0:60)
+## Scene 1 — Hook (0:00–0:20)
 
-**Visual:**
-- Tab switch to LinkedIn feed. Scroll. Another placeholder appears on a "thought leadership" post.
-- Show the dashboard popup: "Text blocked: 12 · Images blocked: 3"
-- Tab switch to Reddit. Scroll r/technology. Human comments pass untouched. One AI marketing post is blurred.
+**Show:** `solelanding.html` or README architecture line.
 
-**Audio:**
-> "It works across platforms — LinkedIn, Reddit, any site — using the same detection engine. The only thing that changes is how we find the content boundary."
+**Say:**
+> “SlopBlock catches AI slop before you waste time reading it — on social feeds, SEO articles, and fake marketplace reviews. Everything runs on your machine. No cloud. No accounts.”
 
 ---
 
-## Scene 4: News / SEO Slop — Track E (1:00–1:20)
+## Scene 2 — Track H + E via demo.html (0:20–1:10)
 
-**Visual:**
-- Open a known content-farm article (e.g., a generic "Best CRM Software 2026" listicle).
-- Full-page text classification highlights paragraphs in orange/red as they score high.
-- Scroll to a genuinely useful paragraph — it passes, no highlight.
-- Show dashboard: stats climbing.
+**Show:** `demo.html` with service connected (green dot).
 
-**Audio:**
-> "For blogs and SEO content farms, SlopBlock analyses full-page text density. This article ranks on page one, says absolutely nothing, and is flagged paragraph by paragraph. But when it hits a section with real citations and specific instructions, the warning disappears."
+1. Click **AI LinkedIn Post** sample → **Analyze** → show **SLOP** badge and confidence ≥80%.
+2. Click **Human Reddit** sample → **Analyze** → show **CLEAN** and confidence &lt;50%.
+3. Click **SEO Slop** sample → **Analyze** → show high slop score.
 
----
-
-## Scene 5: GitHub — Track A (New Hackathon Work) (1:20–1:35)
-
-**Visual:**
-- Navigate to a popular open-source repo on GitHub.
-- Open a pull request. The description has a red dashed border and a yellow warning banner:
-  "SlopBlock: AI-generated content detected (89% confidence · heuristic) — Dismiss"
-- Scroll to comments. One comment is clean (no border). Another has the warning.
-- Click "Dismiss" on the warning; border disappears.
-
-**Audio:**
-> "We built a new GitHub code-review scanner during the hackathon. It flags PR descriptions and comments that summarize the diff you can already read — hollow documentation that wastes reviewer time. Dismiss it if you disagree. SlopBlock surfaces the problem; you make the call."
+**Say:**
+> “Same API the browser extension uses — dual ONNX models plus stylometrics, not another LLM asking if this is AI. Social engagement bait and SEO listicles score high; real human posts with links and typos pass.”
 
 ---
 
-## Scene 6: Image Detection + YouTube (1:35–1:55)
+## Scene 3 — Track G marketplace (1:10–1:45)
 
-**Visual:**
-- Open a forum thread with an AI-generated landscape image.
-- Image placeholder appears: "Suspected AI Image — 97% confidence · model"
-- Click reveal. Show the actual image.
-- Switch to YouTube. Scroll feed. A video thumbnail is dimmed with a badge: "AI-DISCLOSED".
-- Hover over the badge. Tooltip: "Creator declared altered or synthetic content."
+**Option A (extension):** Amazon product page with extension active — scroll to a flagged review, show **reason lines** in the banner.
 
-**Audio:**
-> "Images are caught by a three-model ONNX ensemble plus metadata forensics. This landscape is flagged because the raw file still contains the generator's parameters. And on YouTube, videos where the creator declared synthetic content are intercepted before you waste a click."
+**Option B (terminal):** Run `npm run test:marketplace` — show accuracy line on screen.
+
+**Say:**
+> “Track G uses the same classifier core but adds review-specific signals — product grounding, review-farm detection, explainable reasons. Not just a score — it tells you why.”
 
 ---
 
-## Scene 7: Honest Numbers + Dashboard (1:55–2:10)
+## Scene 4 — Honest numbers (1:45–2:15)
 
-**Visual:**
-- Open the SlopBlock dashboard window.
-- Show stats: "Text blocked: 47 · Images blocked: 12 · YouTube blocked: 5"
-- Switch to a terminal. Run the bake-off script:
-  ```
-  node evaluation/bake-off.js --dataset evaluation/hc3-sample-100.json --threshold 0.60
-  ```
-- Output appears: Precision 89.0%, Recall 73.0%, FPR 9.0%.
-- Show README section titled "Where It Fails".
+**Show:** `evaluation/BAKEOFF_RESULTS.md` or `live-fire-results.md` aggregate table — highlight:
+- 82% bake-off macro accuracy
+- 100% correct on high-confidence (≥75%) live-fire
+- Failures in the 45–65% band documented
 
-**Audio:**
-> "We are honest about what we miss. Our bake-off against three labeled datasets shows eighty-nine percent precision and seventy-three percent recall. We catch most slop, but heavily edited AI output and short formal human posts still slip through. A detector that claims ninety-nine percent accuracy is lying. We chose the tradeoff: seventy-three percent recall, nine percent false positives, one hundred percent on-device."
+**Say:**
+> “We publish confusion matrices and live-fire results — including where it fails. Short human banter and heavily edited AI sit in the gray zone by design.”
 
 ---
 
-## Scene 8: Closing (2:10–2:15)
+## Scene 5 — Close (2:15–2:45)
 
-**Visual:**
+**Show:** Terminal with `git clone` + `npm run demo`, or tray app + extension icon.
 
+**Say:**
+> “Clone the repo, run npm run demo, open demo.html — three minutes. Primary track Social and News; also Content SEO and Marketplaces from one engine. SlopBlock — reclaim the internet from slop.”
 
-- Text: "Built for the Slop Scan Hackathon · May 2026"
-
-**Audio:**
-> "SlopBlock. Reclaim the internet from slop."
+**End card:** GitHub URL · `PASTE_DEMO_VIDEO_URL_HERE`
 
 ---
 
-## Recording Tips
+## Recording tips
 
-1. **Use a clean Chrome profile** with only SlopBlock installed.
-2. **Prepare feeds in advance** — bookmark 3–5 URLs with known AI and human content so the demo is deterministic.
-3. **Enable Slow Mouse Trails** in OBS or your recording tool so viewers can follow clicks.
-4. **Voiceover can be recorded after** — script the audio, record the screen first, then dub.
-5. **Keep transitions under 0.5s** — hard cuts maintain energy.
-6. **Add captions** for accessibility and for judges watching without sound.
+- **1080p screen capture** — zoom browser to 125% for readability.
+- **Mute notification sounds** — close unrelated apps.
+- **Do not demo Enhanced Mode / MITM proxy live** — CA install wastes time; mention it verbally only.
+- **Backup:** If live service fails, show pre-recorded `demo.html` analysis with terminal showing `Service running on http://127.0.0.1:8083`.
 
-## Export Settings
+---
 
-- **Codec:** H.264
-- **Bitrate:** 8–12 Mbps
-- **Audio:** AAC, 192 kbps
-- **Upload:** YouTube (unlisted) + backup to GitHub Releases
+## Checklist before upload
+
+- [ ] Video is 2–3 minutes
+- [ ] Shows tool catching real slop (not just keywords)
+- [ ] Mentions on-device / no cloud
+- [ ] URL pasted into SUBMISSION.md and README
+- [ ] Video set to **public** or **unlisted with link**

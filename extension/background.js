@@ -60,6 +60,20 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
     return true;
   }
 
+  if (msg.type === 'classifyReview') {
+    _ensureToken()
+      .then(() => fetch(BASE + '/classify-review', {
+        method: 'POST',
+        body: JSON.stringify({ text: msg.text, context: msg.context || {} }),
+        headers: { ..._tokenHeaders(), 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000),
+      }))
+      .then(r => r.ok ? r.json() : null)
+      .then(data => respond(data ? { ok: true, data } : { ok: false }))
+      .catch(() => respond({ ok: false }));
+    return true;
+  }
+
   if (msg.type === 'youtubeBlock') {
     fetch(BASE + '/youtube-block', { method: 'POST', headers: _tokenHeaders(), signal: AbortSignal.timeout(800) })
       .then(() => respond({ ok: true }))

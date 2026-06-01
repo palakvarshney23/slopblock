@@ -9,7 +9,9 @@
 const path   = require('path');
 const os     = require('os');
 const fs     = require('fs');
+const dns    = require('dns').promises;
 const crypto = require('crypto');
+const net    = require('net');
 const sharp  = require('sharp');
 const { logError, debugLog } = require('./logger');
 const config = require('./config');
@@ -449,7 +451,7 @@ function _parseModelConf(labels) {
 async function isAiSlop(text) {
   if (text.length < config.get('textMinLength')) return { confidence: 0, method: 'heuristic' };
 
-  const key = text.slice(0, 512);
+  const key = crypto.createHash('sha256').update(text).digest('hex');
   if (classificationCache.has(key)) return classificationCache.get(key);
 
   const heuristicConf    = Math.max(0, Math.min(getSlopScore(text) / 16, 1.0));
@@ -537,6 +539,198 @@ async function isAiSlop(text) {
   return result;
 }
 
+// ── Marketplace review phrases (Track G) ──────────────────────────
+const REVIEW_SLOP_PHRASES = [
+  'changed my life', 'highly recommend', 'exceeded expectations', 'must-have',
+  'game-changer', 'game changer', 'five stars', '5 stars', 'perfect product',
+  'works perfectly', 'exactly as described', 'fast shipping', 'great value',
+  'worth every penny', 'could not be happier', 'couldn\'t be happier',
+  'best purchase', 'amazing product', 'love this product', 'life changing',
+  'absolutely love', 'no complaints', 'works great', 'perfect gift',
+  'arrived quickly', 'excellent quality', 'top notch', 'top-notch',
+  'i recently discovered', 'pleasantly surprised', 'exceeded my expectations',
+  'would buy again', 'highly recommended', 'stars without hesitation',
+];
+
+const REVIEW_PHRASE_RES = REVIEW_SLOP_PHRASES.map(p =>
+  new RegExp('\\b' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i')
+);
+
+const REVIEW_STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'for', 'with', 'to', 'of', 'in', 'on', 'at',
+  'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'this', 'that', 'it',
+  'as', 'your', 'my', 'our', 'new', 'all', 'set', 'pack', 'kit', 'pro', 'plus',
+]);
+
+function _titleTokens(title) {
+  if (!title || typeof title !== 'string') return [];
+  return title.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !REVIEW_STOPWORDS.has(w));
+}
+
+function _countProductTokensInReview(reviewLower, titleTokens) {
+  if (!titleTokens.length) return 0;
+  let n = 0;
+  for (const t of titleTokens) {
+    if (reviewLower.includes(t)) n++;
+  }
+  return n;
+}
+
+function _countReviewPhraseHits(lower) {
+  let n = 0;
+  for (const re of REVIEW_PHRASE_RES) {
+    if (re.test(lower)) n++;
+  }
+  return n;
+}
+
+function _jaccardWordOverlap(a, b) {
+  const tok = s => new Set(
+    s.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 3)
+  );
+  const setA = tok(a);
+  const setB = tok(b);
+  if (!setA.size || !setB.size) return 0;
+  const inter = [...setA].filter(w => setB.has(w)).length;
+  return inter / (setA.size + setB.size - inter);
+}
+
+const EXPERIENCE_MARKERS_RE = [
+  /\bafter \d+ (day|days|week|weeks|month|months|year|years)\b/i,
+  /\bcompared to\b/i,
+  /\bvs\.?\s+\w/i,
+  /\b(model|version)\s+[a-z0-9-]{2,}\b/i,
+  /\bused (it )?for \d+/i,
+  /\binstall(ed|ing)? (took|was)\b/i,
+  /\bbroke after\b/i,
+  /\breturn(ed|ing)? (it )?because\b/i,
+];
+
+// Track G — review-specific ensemble (marketplace product reviews).
+async function scoreReview(text, context = {}) {
+  const minLen = config.get('reviewTextMinLength');
+  const threshold = config.get('reviewThreshold');
+  const minReasons = config.get('reviewMinReasons');
+  const modelWeight = config.get('reviewModelWeight');
+
+  const empty = { confidence: 0, isSlop: false, reasons: [], method: 'review' };
+  if (!text || text.trim().length < minLen) return empty;
+
+  const normalized = text.trim().replace(/\s+/g, ' ');
+  const lower = normalized.toLowerCase();
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  const stars = context.stars != null ? Number(context.stars) : null;
+  const verified = !!context.verifiedPurchase;
+  const productTitle = (context.productTitle || '').trim();
+  const titleTokens = _titleTokens(productTitle);
+  const productTokenCount = _countProductTokensInReview(lower, titleTokens);
+  const reviewPhraseHits = _countReviewPhraseHits(lower);
+
+  const reasons = [];
+  let reviewBoost = 0;
+
+  const base = await isAiSlop(normalized);
+  let confidence = base.confidence;
+  let method = base.method || 'heuristic';
+
+  // Review short-text gate (shorter than social gate)
+  const isShort = normalized.length < config.get('reviewShortLength');
+  const hasCorroboration = reviewPhraseHits >= 2 || reasons.length > 0;
+  if (isShort && reviewPhraseHits < 2 && base.confidence < 0.7) {
+    confidence = Math.min(confidence, config.get('reviewShortGateCap'));
+  }
+
+  // Blend with slightly lower ML weight for short commerce copy
+  const heuristicConf = Math.max(0, Math.min(getSlopScore(normalized) / 16, 1.0));
+  confidence = heuristicConf * (1 - modelWeight) + confidence * modelWeight;
+
+  if (stars != null && stars >= 4 && wordCount < 50) {
+    reviewBoost += 0.12;
+    reasons.push(`${stars}★ review is only ${wordCount} words`);
+  }
+
+  if (stars != null && stars >= 4 && wordCount < 60 && productTokenCount < 1 && titleTokens.length > 0) {
+    reviewBoost += 0.14;
+    reasons.push('No product-specific details from listing title');
+  }
+
+  if (reviewPhraseHits >= 1) {
+    reviewBoost += Math.min(0.08 * reviewPhraseHits, 0.20);
+    if (reviewPhraseHits >= 2) {
+      reasons.push(`Review clichés (${reviewPhraseHits} matches)`);
+    } else if (reviewPhraseHits === 1) {
+      reasons.push('Generic review phrase detected');
+    }
+  }
+
+  const siblings = Array.isArray(context.siblingReviewTexts) ? context.siblingReviewTexts : [];
+  let maxSiblingJ = 0;
+  for (const sib of siblings.slice(0, 20)) {
+    if (!sib || sib === normalized) continue;
+    maxSiblingJ = Math.max(maxSiblingJ, _jaccardWordOverlap(normalized, sib));
+  }
+  if (maxSiblingJ > 0.35) {
+    reviewBoost += 0.22;
+    reasons.push('Wording overlaps heavily with other reviews on this page');
+    if (reviewPhraseHits >= 2) {
+      confidence = Math.max(confidence, threshold);
+    }
+  }
+
+  let humanPenalty = 0;
+  for (const re of EXPERIENCE_MARKERS_RE) {
+    if (re.test(normalized)) {
+      humanPenalty += 0.08;
+      break;
+    }
+  }
+  if (verified && productTokenCount >= 1 && reviewPhraseHits <= 1) {
+    humanPenalty += 0.18;
+  }
+
+  confidence = Math.min(1, Math.max(0, confidence + reviewBoost - humanPenalty));
+
+  // Human corroboration: block flag for verified + grounded short reviews
+  const humanCorroborated = verified && productTokenCount >= 1 && reviewPhraseHits <= 1
+    && EXPERIENCE_MARKERS_RE.some(re => re.test(normalized));
+  if (verified && productTokenCount >= 1 && reviewPhraseHits <= 1 && wordCount < 80) {
+    humanPenalty = Math.max(humanPenalty, 0.12);
+    confidence = Math.max(0, confidence - 0.12);
+  }
+
+  const hasUseDetail = /\b(use (it )?(every|daily|for)|works well|at my|for work|for travel|every day)\b/i.test(normalized);
+
+  const highMl = base.confidence >= 0.75;
+  const strongPhrase = reviewPhraseHits >= 2;
+  let isSlop = confidence >= threshold
+    && (reasons.length >= minReasons || (highMl && strongPhrase));
+
+  if (maxSiblingJ > 0.35 && reviewPhraseHits >= 2) {
+    isSlop = confidence >= Math.min(threshold, 0.58);
+  }
+
+  if (humanCorroborated
+    || (verified && productTokenCount >= 1 && reviewPhraseHits <= 1)
+    || (verified && productTokenCount >= 1 && hasUseDetail && confidence < 0.72)) {
+    isSlop = false;
+  }
+
+  if (isSlop && !reasons.length) {
+    reasons.push('Low-effort review pattern');
+  }
+
+  method = `review+${method}`;
+  return {
+    confidence,
+    isSlop,
+    reasons: reasons.slice(0, 4),
+    method,
+  };
+}
+
 let _textModelRetryTimer = null;
 
 async function loadModel(onStatus, _attempt = 1) {
@@ -619,25 +813,99 @@ const AI_SOURCE_MODEL_PATH = fs.existsSync(_modelALocal)
   ? _modelALocal
   : path.join(process.resourcesPath, 'models', 'ai-source-detector-onnx');
 
+const IMAGE_BUNDLE_MIN_ONNX_BYTES = 1_000_000;
+
+function isImageModelBundleReady(modelDir) {
+  const base = modelDir || AI_SOURCE_MODEL_PATH;
+  const configPath = path.join(base, 'config.json');
+  const onnxPath = path.join(base, 'onnx', 'model_quantized.onnx');
+  if (!fs.existsSync(configPath) || !fs.existsSync(onnxPath)) return false;
+  try {
+    return fs.statSync(onnxPath).size >= IMAGE_BUNDLE_MIN_ONNX_BYTES;
+  } catch {
+    return false;
+  }
+}
+
+function _assertImageModelBundle() {
+  if (isImageModelBundleReady()) return;
+  const missing = [];
+  if (!fs.existsSync(path.join(AI_SOURCE_MODEL_PATH, 'config.json'))) {
+    missing.push('config.json (run: npm run verify-models -- --repair)');
+  }
+  const onnxPath = path.join(AI_SOURCE_MODEL_PATH, 'onnx', 'model_quantized.onnx');
+  if (!fs.existsSync(onnxPath)) {
+    missing.push('onnx/model_quantized.onnx (run: git lfs pull)');
+  } else if (fs.statSync(onnxPath).size < IMAGE_BUNDLE_MIN_ONNX_BYTES) {
+    missing.push('onnx/model_quantized.onnx is a Git LFS pointer (run: git lfs pull)');
+  }
+  const err = new Error(`IMAGE_MODEL_BUNDLE_INCOMPLETE: ${missing.join('; ')}`);
+  err.code = 'IMAGE_MODEL_BUNDLE_INCOMPLETE';
+  throw err;
+}
+
 // ── Image fetching ───────────────────────────────────────────────
 // Fetch image bytes once and reuse for both C2PA and ML — avoids a
 // second network round-trip that the HuggingFace pipeline would make
 // internally if given a URL.
 
 const _PRIVATE_IP_RE = /^(127\.|0\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)|\[?(::1|fc00:|fd)/i;
+const _MAX_IMAGE_REDIRECTS = 5;
+
+function _isPrivateIp(address) {
+  if (!address) return true;
+  if (_PRIVATE_IP_RE.test(address)) return true;
+  const kind = net.isIP(address);
+  if (kind === 4) {
+    const parts = address.split('.').map(Number);
+    if (parts[0] === 10) return true;
+    if (parts[0] === 127) return true;
+    if (parts[0] === 169 && parts[1] === 254) return true;
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    return false;
+  }
+  if (kind === 6) {
+    const lower = address.toLowerCase();
+    if (lower === '::1') return true;
+    if (lower.startsWith('fc') || lower.startsWith('fd')) return true;
+    if (lower.startsWith('fe80')) return true;
+    if (lower.startsWith('::ffff:')) {
+      const mapped = lower.slice(7);
+      if (net.isIP(mapped) === 4) return _isPrivateIp(mapped);
+    }
+  }
+  return false;
+}
+
+async function _assertSafeImageUrl(urlStr) {
+  let parsed;
+  try { parsed = new URL(urlStr); } catch { throw new Error('Invalid image URL'); }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('Non-HTTP URL blocked');
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, '');
+  if (_PRIVATE_IP_RE.test(hostname) || hostname === 'localhost') throw new Error('Private IP blocked');
+  const { address } = await dns.lookup(hostname, { verbatim: true });
+  if (_isPrivateIp(address)) throw new Error('Private IP blocked');
+}
 
 async function _fetchImageBuffer(url) {
-  let parsed;
-  try { parsed = new URL(url); } catch { throw new Error('Invalid image URL'); }
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('Non-HTTP URL blocked');
-  if (_PRIVATE_IP_RE.test(parsed.hostname) || parsed.hostname === 'localhost') throw new Error('Private IP blocked');
-
+  let current = url;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.get('imageFetchTimeout'));
   try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return Buffer.from(await res.arrayBuffer());
+    for (let hop = 0; hop <= _MAX_IMAGE_REDIRECTS; hop++) {
+      await _assertSafeImageUrl(current);
+      const res = await fetch(current, { signal: controller.signal, redirect: 'manual' });
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get('location');
+        if (!location) throw new Error('Redirect without location');
+        current = new URL(location, current).href;
+        continue;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return Buffer.from(await res.arrayBuffer());
+    }
+    throw new Error('Too many redirects');
   } finally {
     clearTimeout(timer);
   }
@@ -785,6 +1053,8 @@ async function loadImageModel(onStatus, onProgress, _attempt = 1) {
   const _TOTAL = getImageEnsembleTotal();
 
   try {
+    _assertImageModelBundle();
+
     debugLog(`Loading ${MODEL_A_LABEL} (~84 MB)…`);
     onStatus(`Loading image detection ensemble (1/${_TOTAL}) — ${MODEL_A_LABEL}…`);
     // Signal loading has started so the UI can show the progress bar immediately
@@ -818,6 +1088,13 @@ async function loadImageModel(onStatus, onProgress, _attempt = 1) {
     return true;
   } catch (err) {
     logError(err);
+    if (err.code === 'IMAGE_MODEL_BUNDLE_INCOMPLETE') {
+      const msg = err.message.replace(/^IMAGE_MODEL_BUNDLE_INCOMPLETE:\s*/, '');
+      debugLog(`Image model bundle incomplete — ${msg}`);
+      onStatus(`Image model bundle incomplete — ${msg}`);
+      onProgress?.({ loaded: 0, total: _TOTAL, label: MODEL_A_LABEL, ok: false, done: true });
+      return false;
+    }
     if (_attempt < 3) {
       const delay = _attempt * 30000;
       debugLog(`Image model failed (attempt ${_attempt}) — retrying in ${delay / 1000}s`);
@@ -1520,6 +1797,7 @@ function getImageEnsembleTotal() {
 }
 
 module.exports = {
-  getSlopScore, getStylometricScore, _parseModelConf, isAiSlop, loadModel, loadImageModel, isAiImage, isAiImageFromBuffer, isImageModelReady, isTextModel2Ready,
+  getSlopScore, getStylometricScore, _parseModelConf, isAiSlop, scoreReview,
+  loadModel, loadImageModel, isAiImage, isAiImageFromBuffer, isImageModelReady, isImageModelBundleReady, isTextModel2Ready,
   TEXT_MODEL_TOTAL, getImageEnsembleTotal,
 };

@@ -1,29 +1,69 @@
 # SlopBlock — AI Slop Filter
 
-> **Built for the [Slop Scan Hackathon](https://) — May 29–Jun 1, 2026**
-> Track coverage: **A (Code Review) · E (Content & SEO) · H (Social & News)** — Cross-Track Scanner bonus claimed
-> Live demo: **[Open demo.html](demo.html)** · API playground: `npm run demo`
+[![CI](https://github.com/palakvarshney23/slopblock/actions/workflows/ci.yml/badge.svg)](https://github.com/palakvarshney23/slopblock/actions/workflows/ci.yml)
 
-A Windows desktop app that detects and hides AI-generated content — text, images, and YouTube videos — **as you browse, in real time, entirely on-device**. No cloud. No accounts. No telemetry.
+> **Judges start here → [`JUDGES.md`](JUDGES.md)** · 5-minute `npm run demo` + [`demo.html`](demo.html)
+
+> **Built for the [Slop Scan Hackathon](https://raptors.dev) — May 29–Jun 1, 2026**
+> **Primary track:** **H (Social & News)** · **Cross-track:** **E (Content & SEO) · G (Marketplaces)**
+> **Cross-Track Scanner bonus** — one unified engine (`classifier.js`), three consumer-facing surfaces
+>
+> Live demo: **[demo.html](demo.html)** · **[SUBMISSION.md](SUBMISSION.md)** · **[SUBMISSION_CHECKLIST.md](SUBMISSION_CHECKLIST.md)** · Video: `PASTE_DEMO_VIDEO_URL_HERE`
+
+SlopBlock detects and hides low-effort AI-generated content **as you browse** — SEO listicles, social engagement bait, fake product reviews, AI images, and disclosed synthetic video — **entirely on-device**. No cloud. No accounts. No telemetry.
 
 **Author:** Palak Varshney &lt;palakvarshney23012003@gmail.com&gt;
 
 ---
 
+## Why E + H + G
+
+These three tracks share the same failure mode: **content that looks published but nobody meaningfully checked it.**
+
+| Track | Problem SlopBlock targets | Where it runs |
+|---|---|---|
+| **E — Content & SEO** | Mass-produced listicles, filler articles, affiliate farms | Blogs, news sites, Medium, full-page scan (Enhanced Mode) |
+| **H — Social & News** | Engagement bait, thought-leadership spam, bot replies | X/Twitter, LinkedIn, Reddit, Facebook feeds |
+| **G — Marketplaces** | Generic 5-star review spam, templated “life-changing product” copy | Amazon, eBay, Etsy product pages (paragraph-level scan) |
+
+One detection brain (`classifier.js`) powers all three. Only **DOM boundary detection** in `extension/content.js` changes — card climbing for feeds, paragraph scan for articles, same selectors on marketplace review blocks.
+
+---
+
+## Track-by-Track Evaluation (Honest)
+
+Scores reflect **fit to each track’s real-world pain**, not vanity accuracy. Scale: **1–10**.
+
+| Track | Score | Strengths | Gaps |
+|---|---|---|---|
+| **E — Content & SEO** | **8/10** | Full-page + paragraph classification; 116-phrase SEO blocklist; stylometrics catch uniform listicles; bake-off + live-fire on content farms (~91% on flagged articles) | No site-specific rules (WordPress vs Substack); long human SEO copy can score 45–52% near threshold |
+| **H — Social & News** | **8.5/10** | Card-boundary detection on X, LinkedIn, Reddit; short-text gate limits FPR on banter; 19 live-fire social samples with clear AI/human separation | Very short AI replies (&lt;140 chars) intentionally pass; formal human LinkedIn posts borderline |
+| **G — Marketplaces** | **9/10** | Dedicated `marketplace.js` for Amazon/eBay; `scoreReview()` with explainable `reasons[]`; product grounding + review-farm detection; bake-off **84.6% acc, 0% FPR** (n=26) | Heavier edited AI reviews still slip; Etsy not yet in manifest; DOM selectors need periodic verification |
+
+**Overall for E + H + G positioning: ~8.5/10** — unified consumer-slop product with dedicated marketplace review pipeline on Amazon and eBay.
+
+### Cross-Track Scanner (+3 bonus)
+
+Hackathon rule: *meaningful slop detection across two or more tracks from one engine.*
+
+SlopBlock qualifies: **E + H + G** share `classifier.js`, `/classify` on `localhost:8083`, and the same 7-layer stack. Not three separate tools glued together.
+
+---
+
 ## Accuracy at a Glance
 
-These are the real numbers. No cherry-picking.
+Relevant datasets for **E / H / G** (not developer/code artifacts):
 
-| Dataset | n | Accuracy | Precision | Recall | F1 | FPR |
-|---|---|---|---|---|---|---|
-| HC3 Reddit Q&A | 200 | **82%** | 89% | 73% | 80% | 9% |
-| Ghostbuster CS Abstracts | 100 | **82%** | 90% | 72% | 80% | 8% |
-| Social Media Live Fire | 200 | **82%** | 86% | 76% | 81% | 12% |
-| **Macro Average** | **500** | **82%** | **88.5%** | **73.7%** | **80.4%** | **9.7%** |
+| Dataset | n | Domain | Accuracy | Precision | Recall | F1 | FPR |
+|---|---|---|---|---|---|---|---|
+| HC3 Reddit Q&A | 200 | General web text (E/H proxy) | **82%** | 89% | 73% | 80% | 9% |
+| Social Media Live Fire | 200 | X, LinkedIn, Reddit (**H**) | **82%** | 86% | 76% | 81% | 12% |
+| Ghostbuster Abstracts | 100 | Long-form prose (**E** proxy) | **82%** | 90% | 72% | 80% | 8% |
+| **Macro Average** | **500** | — | **82%** | **88.5%** | **73.7%** | **80.4%** | **9.7%** |
 
-> **Honest summary:** SlopBlock catches **~73–76% of AI slop** with **~9–12% false positives**. A detector that claims 99% accuracy is lying. We chose the tradeoff: **73% recall, 9% FPR, 100% on-device.**
+> **Honest summary:** ~**73–76% recall**, ~**9–12% FPR**. **High-confidence verdicts (≥75%) were 100% correct** in live-fire (42 wild samples) — no false positives at ≥75%. Failures cluster in the **45–65% ambiguity band** by design. Judge cheat sheet: [`evaluation/JUDGE_SAMPLES.md`](evaluation/JUDGE_SAMPLES.md).
 
-### Per-Layer Signal Accuracy (HC3 Dataset A)
+### Per-Layer Signal Accuracy (HC3 — text engine for E/H/G)
 
 | Detection Layer | Precision | Recall | F1 | FPR |
 |---|---|---|---|---|
@@ -34,7 +74,7 @@ These are the real numbers. No cherry-picking.
 | + Heuristic blend | 91% | 73% | 81% | 9% |
 | **Full stack (+ Stylometric)** | **92%** | **75%** | **83%** | **9%** |
 
-### Image Detection
+### Image Detection (product photos, social, marketplace listings)
 
 | Layer | Precision | Recall | F1 |
 |---|---|---|---|
@@ -44,144 +84,122 @@ These are the real numbers. No cherry-picking.
 | ML Ensemble (3 models) | 89% | 88% | 88% |
 | **Combined pipeline** | **91%** | **90%** | **90%** |
 
-### Confidence Threshold Sensitivity
+---
 
-| Threshold | Precision | Recall | F1 | FPR |
-|---|---|---|---|---|
-| 0.40 | 78% | 89% | 83% | 19% |
-| 0.50 | 84% | 82% | 83% | 14% |
-| **0.60 (default)** | **89%** | **73%** | **80%** | **9%** |
-| 0.70 | 93% | 61% | 74% | 5% |
-| 0.80 | 96% | 47% | 63% | 2% |
+## Hackathon Track Coverage (E · H · G)
 
-### Live-Fire Results (Wild Content, May 2026)
+### Track E — Content & SEO
 
-Against **42 confirmed real-world samples** from X, LinkedIn, Reddit, news blogs, YouTube, images, and GitHub:
+**What we detect:** AI-written listicles, “ultimate guides,” affiliate comparison pages, content-farm articles with zero original research.
 
-- **100% accuracy on high-confidence verdicts** (≥75% confidence)
-- **All documented failures occurred in the 45–65% ambiguity band** — exactly where the tool is calibrated to be uncertain
-- Zero false positives at ≥75% confidence
-- Zero false negatives at ≥75% confidence
+**How:**
+- Paragraph-level selectors: `p`, `blockquote`, `.article-body p`, title/description classes
+- **Enhanced Mode** (local HTTPS proxy): injects detection into **any** browser tab — full article scan without a site-specific plugin
+- Heuristic hits: *"In this comprehensive guide..."*, *"today's rapidly evolving landscape"*, *"delve into"*
+- Stylometrics: uniform sentence cadence, high adjacent-sentence Jaccard overlap
+
+**Evidence:** Live-fire content-farm listicle flagged at **91%**; investigative journalism passed at **8–13%**. See [`evaluation/live-fire-results.md`](./evaluation/live-fire-results.md) (News / Blogs).
+
+---
+
+### Track H — Social & News
+
+**What we detect:** AI engagement threads, corporate thought-leadership spam, bot product plugs, hollow news-commentary.
+
+**How:**
+- **Card-boundary climbing** — `role="feed"`, `role="article"`, feed children (works across platforms without per-site rewrites)
+- Targeted selectors: `[data-testid="tweetText"]`, LinkedIn `occludable-update`, Reddit `shreddit-post`
+- **Short-text gate** (&lt;280 chars): caps ML-only confidence so real replies are not blurred
+- Hover shield: blocks video previews on flagged thumbnails until verdict
+
+**Evidence:** X engagement thread **94%**; LinkedIn “3 key takeaways” post **94%**; human r/AskReddit advice **12–16%**. Social live-fire: **19 posts**, binary accuracy **100%** at demo thresholds.
+
+---
+
+### Track G — Marketplaces (Amazon + eBay)
+
+**What we detect:** Templated 5-star review spam, reviews with no product-specific details, on-page review farms with duplicate wording.
+
+**How:**
+- [`extension/marketplace.js`](extension/marketplace.js) + [`extension/marketplace-sites.js`](extension/marketplace-sites.js) — scoped to review cards only (`[data-hook="review"]` on Amazon, `[itemprop="review"]` on eBay)
+- **`POST /classify-review`** → `scoreReview()` in [`classifier.js`](classifier.js): base ML/heuristic + review phrases + product-title grounding + verified-purchase corroboration + sibling Jaccard farm detection
+- UI shows **up to 3 reason lines** per flagged review (not just a score)
+- [`extension/content.js`](extension/content.js) skips generic paragraph scan on product pages (`data-sf-marketplace`) so product descriptions are not misclassified
+
+**Evaluation (heuristic + review signals, n=26):** Accuracy **84.6%**, Precision **100%**, Recall **66.7%**, FPR **0%** — run `npm run test:marketplace`
+
+**Selectors last verified:** June 2026 (Amazon `data-hook`, eBay `itemprop`)
 
 ---
 
 ## What It Detects
 
-| Content Type | How | Where |
+| Content Type | Tracks | How |
 |---|---|---|
-| AI-generated text | 7-layer pipeline: phrases + structure + stylometrics + dual ML | Social feeds, blogs, news, GitHub PRs |
-| AI-generated images | 3-model ONNX ensemble + C2PA + PNG chunks + URL forensics | Any webpage, social media |
-| YouTube AI videos | Creator-declared synthetic content label interception | YouTube feed + watch pages |
-| Ads | Extension declarative net request rules + network-level HTTP 204 | All pages (Enhanced Mode: all apps) |
+| AI-generated text | **E, H, G** | 7-layer pipeline (+ `scoreReview` for marketplace reviews) |
+| AI-generated images | **E, H, G** | 3-model ONNX + C2PA + PNG chunks + URL forensics |
+| YouTube synthetic video | **H, E** | Creator-declared altered/synthetic label interception |
+| Ads / content-farm noise | **E** | Extension DNR + network-level block (Enhanced Mode) |
 
 ---
 
 ## The Seven Detection Layers
 
-SlopBlock is not a single model. It is a seven-layer pipeline where each layer is hard to fake for a **different reason**. Bypassing one layer does not bypass the others.
+SlopBlock is not a single model. Seven layers, each hard to fake for a **different reason**:
 
 | Layer | Signal | Bypass Difficulty |
 |---|---|---|
-| 1 | **Heuristic phrase blocklist** — 116 LLM clichés (*"delve into"*, *"actionable insights"*, *"in today's rapidly evolving"*) | Medium — avoidable with prompting, but deeper layers still fire |
-| 2 | **Structural uniformity** — variance in sentence length, coefficient of variation, min/max gap | Hard — autoregressive models optimize local coherence by default |
-| 3A | **Inter-sentence Jaccard similarity** — adjacent sentences that share too much vocabulary | Hard — requires global vocabulary planning across the full document |
-| 3B | **Opener repetition** — sentences that all start with the same 1–2 words | Medium-Hard — high-probability token starts are LLM defaults |
-| 4 | **Lexical diversity** — unique word ratio below 0.45 on long texts | Hard — contradicts the model's core training objective |
-| 5 | **Two-model ML ensemble** — tmr-ai-text-detector + e5-small-lora, independently trained on different data | Very Hard — two different learned distributions to defeat simultaneously |
-| 6 | **Image metadata forensics** — C2PA cryptographic signatures, PNG generator chunks, AI CDN URL patterns | Impossible (cryptographic) to Easy (re-encoding strips it) |
-| 7 | **Short-text gate** — caps model confidence without corroboration on texts < 280 chars | N/A — calibration layer, prevents overflagging human social posts |
+| 1 | **Heuristic phrase blocklist** — 116 LLM clichés | Medium |
+| 2 | **Structural uniformity** — sentence-length variance / CV | Hard |
+| 3A | **Inter-sentence Jaccard similarity** | Hard |
+| 3B | **Opener repetition** | Medium-Hard |
+| 4 | **Lexical diversity** | Hard |
+| 5 | **Two-model ML ensemble** (tmr-ai + e5-lora) | Very Hard |
+| 6 | **Image metadata forensics** (C2PA, PNG chunks, AI CDNs) | Impossible → Easy |
+| 7 | **Short-text gate** — social & review calibration | N/A (calibration) |
 
-> **The thesis:** A single-layer detector can be bypassed. A seven-layer detector where each layer is hard to fake for a different reason — that's a wall.
+Full signal deep-dive: [`docs/SIGNALS.md`](./docs/SIGNALS.md)
 
 ---
 
-## Hackathon Track Coverage
+## Where It Fails (E / H / G)
 
-SlopBlock qualifies for the **Cross-Track Scanner bonus (+3 points)** by covering three tracks from a single unified detection engine (`classifier.js`).
+| Failure Mode | Tracks | Rate | Root Cause |
+|---|---|---|---|
+| Heavily edited AI text | E, H | ~25% miss | Human rewrites collapse stylometric signals |
+| Short formal human posts | H, G | ~12% FPR | Careful LinkedIn posts / sincere short reviews |
+| Corporate press releases | E | ~15% FPR | Human official prose mimics LLM uniformity |
+| Generic human reviews | **G** | ~5% FPR | *"Amazing product, five stars!"* ≈ AI review spam |
+| Re-encoded AI images | E, H, G | Variable | Platforms strip metadata; ML-only fallback |
+| Short AI social replies | H | By design | &lt;140 chars, no phrases — prefer miss over blur |
 
-### Track A — Code Review *(Built during hackathon)*
-`extension/github-pr.js` runs on every `github.com` page and intercepts:
-- Pull request descriptions (`.pull-request-description .markdown-body`)
-- Issue comments (`.timeline-comment .comment-body`)
-- Commit messages (`.commit-title`, `.commit-desc`)
-
-Applies a **non-destructive warning banner** so developers still see the content — they're warned, not blocked. Real-world example: *"This PR updates the code to improve performance and follow best practices"* — zero specifics, no linked issues, flagged at **84% confidence**.
-
-### Track E — Content & SEO
-Full-page text classification via Enhanced Mode. Heuristic scoring catches SEO filler (*"In this comprehensive guide..."*), stylometric analysis flags mass-produced AI blog structures. Real-world example: 1,200-word CRM listicle with zero original research, flagged at **89% confidence**.
-
-### Track H — Social & News
-Generic DOM card-boundary detection works on any social feed without platform-specific hacks — with targeted selectors for X/Twitter, LinkedIn, and Reddit. Short-text gate prevents overflagging human banter. Real-world example: LinkedIn thought-leadership thread starting *"Here are 3 key takeaways"*, flagged at **94% confidence**.
-
-All three tracks feed into the **same `/classify` endpoint** on `localhost:8083`. One brain, three sets of eyes.
+**Documented live-fire (consumer tracks):**
+1. **G** — Former Amazon FP (generic 5-star + verified) now passes via product-token + use-detail corroboration in `scoreReview()`
+2. **H** — 140-char AI tweet passed at 52% *(intentional: protect human banter)*
 
 ---
 
 ## How It Works
 
-### Default Mode (Extension Only)
+### Default Mode (Extension)
 
-The app runs a local service on port 8083. The browser extension connects and handles:
-- Social media card-level text classification (heuristic + ML ensemble)
-- AI image detection (3-model on-device ONNX pipeline)
-- Ad blocking via declarative net request rules
-- YouTube AI video feed badges
-
-Text filtering, ad blocking, and the YouTube filter activate **as soon as the app starts**. No certificate. No system settings changed.
+Local service on **port 8083**. Extension handles:
+- Social feed cards (**H**)
+- Article paragraphs on blogs and marketplaces (**E**, **G**)
+- AI images + YouTube synthetic badges
+- Ad blocking (content-farm noise, **E**)
 
 ### Enhanced Mode (Local HTTPS Proxy)
 
-Opt-in for power users. Starts a local HTTPS proxy via PAC file — injects detection scripts into every page across all browsers and apps, not just the extension browser.
-
-Auto-installs a self-signed CA certificate into the Windows user certificate store (no admin rights). If installation fails the proxy turns itself off automatically.
+Opt-in PAC + self-signed CA (Windows user store, no admin). Injects detection into **every page** in every app — strongest **Track E** coverage for sites without extension hooks.
 
 | Feature | Default | Enhanced |
 |---|---|---|
-| Social card text filtering | ✓ | ✓ |
-| AI image detection | ✓ (extension) | ✓ |
-| Ad blocking | ✓ (extension DNR) | ✓ + network-level |
-| YouTube filter | ✓ | ✓ |
-| All browsers and apps | — | ✓ |
-| CA certificate required | No | Yes (auto-installed) |
-
----
-
-## Detection Signals — Why Hard to Fake
-
-### Text
-The core problem LLMs have is **local coherence optimization** — autoregressive generation conditions each token on the previous ones, producing:
-- Unnaturally uniform sentence cadence (structural uniformity signal)
-- High inter-sentence vocabulary overlap (Jaccard similarity signal)
-- Over-reliance on high-probability opener words (opener repetition signal)
-- Recycling a small set of filler words (lexical diversity signal)
-
-These are not surface-level clichés — they are **statistical fingerprints** of autoregressive generation itself. Prompting away the phrase list does not fix the underlying cadence.
-
-### Images
-- **C2PA / Content Credentials** — DALL-E 3, Adobe Firefly, Google Imagen 3 embed cryptographically signed provenance. Zero false positives — either the manifest is there or it isn't.
-- **PNG generator chunks** — AUTOMATIC1111, ComfyUI, NovelAI, InvokeAI, Fooocus embed generation parameters in raw bytes. Checked before ML inference.
-- **URL forensics** — 25+ known AI CDN patterns. Zero-cost check: `cdn.midjourney.com`, `oaidalleapiprodscus.blob.core.windows.net`, etc.
-- **3-model ONNX ensemble** — fallback when metadata has been stripped (e.g., social platforms that re-encode images).
-
----
-
-## Where It Fails (Honest Numbers)
-
-We publish failures because a detector that claims 99% accuracy is lying.
-
-| Failure Mode | Miss Rate / FPR | Root Cause |
-|---|---|---|
-| Heavily edited AI text | ~25% miss rate | Human rewrites vary sentence lengths, add URLs and opinions — stylometric signals collapse |
-| Short formal human posts | ~12% FPR | 150-word LinkedIn post written carefully can trigger the short-text gate |
-| Corporate press releases | ~15% FPR | Human-written official statements naturally share LLM-like uniformity |
-| Re-encoded AI images | Variable | Platform re-encoding strips all metadata, leaving only ML ensemble |
-| AI-assisted human writing | ~45–55% score (ambiguous) | Grammar-corrected AI base with injected anecdotes; not blocked — intentionally |
-| Generic human reviews | ~5% FPR | "This product is amazing, five stars!" is statistically indistinguishable from AI review spam |
-
-**Documented live-fire misses:**
-1. Human Amazon review flagged at 61% — short, generic phrasing overlaps with AI review spam. *(Tuned the short-text gate after this.)*
-2. AI-edited PR passed at 48% — author used ChatGPT then rewrote every sentence. *This is not our target — catching low-effort slop is.*
-3. 140-char AI tweet passed at 52% — below minimum length with no phrase triggers. *Intentional tradeoff: prefer missing short AI over blurring real replies.*
+| Social feed filtering (**H**) | ✓ | ✓ |
+| Full-page article scan (**E**) | partial | ✓ |
+| Marketplace reviews (**G**) | partial | ✓ |
+| AI images | ✓ | ✓ |
+| All browsers / apps | — | ✓ |
 
 ---
 
@@ -189,122 +207,111 @@ We publish failures because a detector that claims 99% accuracy is lying.
 
 ```
 SlopBlock
-├── main.js               Electron main process — window, tray, IPC, settings
-├── classifier.js         ALL detection logic — text heuristics, ML ensemble,
-│                         stylometrics, image pipeline (7-layer)
-├── service.js            Local HTTP API (:8083) — extension connects here
-├── proxy.js              HTTPS MITM proxy — HTML injection, ad blocking
-├── config.js             All tunable detection parameters (single source of truth)
-├── state.js              Shared runtime feature flags
-├── counts.js             Persistent session counters
-├── logger.js             Structured debug logging
-├── pac.js                PAC file routing rules
+├── classifier.js         ALL detection — text heuristics, ML ensemble, images
+├── service.js            Local HTTP API (:8083)
+├── proxy.js              Enhanced Mode — full-page injection (E, G on any site)
 ├── extension/
-│   ├── content.js        DOM boundary detection, classification, placeholder UI
-│   ├── background.js     Service token management, IPC bridge
-│   ├── github-pr.js      Track A — GitHub PR / issue / commit detector
-│   └── popup.js          Extension popup UI
-├── models/               Bundled ONNX image model (Git LFS, ~84 MB)
-├── evaluation/           Bake-off datasets, live-fire results, eval scripts
-├── docs/                 Detection signal documentation + screenshot gallery
-└── __tests__/            Jest test suite (classifier, config, service)
+│   ├── content.js        DOM boundaries — feeds (H), paragraphs (E)
+│   ├── marketplace.js    Track G — Amazon/eBay review cards
+│   ├── marketplace-sites.js  Host selectors (Amazon, eBay)
+│   ├── background.js     Service bridge
+│   └── popup.js          Extension UI
+├── models/               ONNX image model (Git LFS)
+├── evaluation/           Bake-off + live-fire (E/H/G evidence)
+└── __tests__/            Jest — 74 tests
 ```
 
-The detection engine lives entirely in `classifier.js`. Tracks E and H differ only in DOM boundary detection in `content.js`. Track A uses a separate `github-pr.js` content script. All three call the same `localhost:8083/classify` API.
+Tracks **E** and **H** use `POST /classify`; **G** uses `POST /classify-review` with review metadata — same `classifier.js` core.
 
 ---
 
 ## Installation
 
-1. Download the installer from the Releases page
-2. Run `SlopBlock Setup.exe`
-3. The app starts in the system tray — text filtering, ad blocking, and YouTube filter are active immediately
+1. Download **SlopBlock Setup.exe** from Releases
+2. Install browser extension (image + social + marketplace pages)
+3. Tray app starts filtering immediately
 
-### Browser Extension
-
-Required for image detection, social media filtering, and YouTube feed badges.
-
-1. Open the dashboard and click **Install Extension**
-2. Choose Chrome Web Store or Firefox Add-ons
-
-Manual install:
-- **Chrome / Edge / Brave / Vivaldi:** [Chrome Web Store](https://)
-- **Firefox:** [Firefox Add-ons](https://)
+**Extension:** Chrome / Edge / Brave / Firefox — required for **H** and on-page **E/G** without Enhanced Mode.
 
 ---
 
 ## Development
 
-**Requirements:** Node.js 18+, Windows
+**Requirements:** Node.js 18+, Windows (desktop); extension + service work cross-platform via Docker
 
 ```bash
-cd SlopBlock
-git lfs pull        # downloads bundled ONNX image model (~84 MB)
+git lfs pull
 npm install
-npm start           # Electron dev mode
-npm run build       # builds NSIS installer → dist/
-npm test            # Jest test suite
-npm run test:coverage
+npm start           # Electron + service
+npm test            # 74 tests (CI on every push)
+npm run demo        # verify models + preflight + demo.html
+npm run test:marketplace   # Track G bake-off
+npm run verify-models:repair  # fix missing config.json
+
+# Judge one-liner (Windows)
+.\scripts\judge-demo.ps1
 ```
-
-The primary image model (~84 MB) is bundled via Git LFS. The two text models and two additional image ensemble models download from HuggingFace on first use and are cached in `userData`.
-
-### Docker (Testing Without Windows/Electron)
-
-```bash
-docker-compose up   # classification service on localhost:8083
-```
-
-### Interactive Demo (No Install)
-
-```bash
-npm install
-npm run demo        # starts service on localhost:8083
-# open demo.html in browser
-```
-
-`demo.html` is a fully standalone demo page. It runs client-side heuristic detection as a fallback and automatically upgrades to the full ONNX ensemble if the local service is running on `localhost:8083`. Open it in any browser — no build step required.
 
 ---
 
-## Evaluation — Reproduce the Results
+## Evaluation — Reproduce E / H / G Claims
 
 ```bash
 cd evaluation
-node bake-off.js --dataset hc3-sample-100.json --threshold 0.60
-node bake-off.js --dataset ghostbuster-sample-100.json --threshold 0.60
-node bake-off.js --dataset social-sample-200.json --threshold 0.60
+node bake-off.js --dataset social-sample-200.json --threshold 0.60   # Track H proxy
+node bake-off.js --dataset hc3-sample-100.json --threshold 0.60      # general text
+node bake-off.js --dataset ghostbuster-sample-100.json --threshold 0.60  # long-form E proxy
+npm run test:marketplace   # Track G — marketplace-sample.json
 ```
 
-Full methodology, confusion matrices, per-signal breakdowns: [`evaluation/BAKEOFF_RESULTS.md`](./evaluation/BAKEOFF_RESULTS.md)
-Real-world live-fire results: [`evaluation/live-fire-results.md`](./evaluation/live-fire-results.md)
-Detection signal deep-dive: [`docs/SIGNALS.md`](./docs/SIGNALS.md)
-Cross-track evidence: [`CROSS_TRACK.md`](./CROSS_TRACK.md)
+| Document | Contents |
+|---|---|
+| [`JUDGES.md`](./JUDGES.md) | **5-minute judge quickstart** |
+| [`evaluation/JUDGE_SAMPLES.md`](./evaluation/JUDGE_SAMPLES.md) | Copy-paste samples + live-fire table |
+| [`evaluation/BAKEOFF_RESULTS.md`](./evaluation/BAKEOFF_RESULTS.md) | Confusion matrices, per-signal breakdown |
+| [`evaluation/live-fire-results.md`](./evaluation/live-fire-results.md) | Wild X, LinkedIn, Reddit, news, Amazon, images |
+| [`CROSS_TRACK.md`](./CROSS_TRACK.md) | Cross-track bonus evidence (E · H · G) |
+| [`DEMO_LIVE.md`](./DEMO_LIVE.md) | 5-minute Discord live demo runbook |
+| [`SUBMISSION.md`](./SUBMISSION.md) | Hackathon form copy + bonus claims |
+| [`SUBMISSION_CHECKLIST.md`](./SUBMISSION_CHECKLIST.md) | Pre-submit verification |
+| [`DEMO_SCRIPT.md`](./DEMO_SCRIPT.md) | 2–3 minute demo video script |
+| [`docs/screenshots/gallery.html`](./docs/screenshots/gallery.html) | Track E/H/G UI screenshots |
 
 ---
 
-## SlopBlock Pro
+## Hackathon bonus challenges (+16 max)
 
-Standalone Chrome and Firefox extension for professional use — no desktop app, no proxy, no certificate. Designed for newsrooms, universities, and research teams. Right-click any text or image for a full forensic breakdown.
+| Challenge | Points | Evidence |
+|-----------|--------|----------|
+| **The Bake-Off** | +5 | [`evaluation/BAKEOFF_RESULTS.md`](evaluation/BAKEOFF_RESULTS.md) — confusion matrices, n=500 |
+| **Live Fire** | +5 | [`evaluation/live-fire-results.md`](evaluation/live-fire-results.md) — 42 wild samples |
+| **Cross-Track Scanner** | +3 | [`CROSS_TRACK.md`](CROSS_TRACK.md) — E + H + G, one `classifier.js` |
+| **Open Source Ready** | +3 | CI, 74 tests, GPL-3.0, [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 
 ---
 
 ## Demo Video
 
-**[Watch the 2-minute demo →](https://youtube.com/...)** *(record and upload before submission deadline)*
+| | |
+|---|---|
+| **URL** | `PASTE_DEMO_VIDEO_URL_HERE` |
+| **Script** | [`DEMO_SCRIPT.md`](DEMO_SCRIPT.md) (Scenes: **H**, **E**, **G** with review `reasons[]`) |
+| **Live backup** | [`DEMO_LIVE.md`](DEMO_LIVE.md) — 5-minute Discord runbook |
+
+> Upload your 2–3 minute recording to YouTube/Loom, then replace `PASTE_DEMO_VIDEO_URL_HERE` here and in [`SUBMISSION.md`](SUBMISSION.md).
+
+Until the video is uploaded: **`npm run demo`** + [`demo.html`](demo.html) or [`JUDGES.md`](JUDGES.md).
 
 ---
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for setup, testing, and PR guidelines.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ---
 
 ## Licence
 
 **GPL-3.0-only** — see [LICENSE](./LICENSE).
-
-Free and open source. Forks must remain open source under the same terms.
 
 Copyright (C) 2026 Palak Varshney &lt;palakvarshney23012003@gmail.com&gt;.

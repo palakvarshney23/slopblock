@@ -194,6 +194,15 @@ describe('isAiSlop offline paths', () => {
     expect(r1.confidence).toBe(r2.confidence);
     expect(r1.method).toBe(r2.method);
   });
+
+  test('does not conflate texts that share only a long prefix', async () => {
+    const prefix = 'A'.repeat(520);
+    const a = prefix + ' human ending with url https://example.com/foo';
+    const b = prefix + ' delve into comprehensive guide unlock your potential';
+    const rA = await isAiSlop(a);
+    const rB = await isAiSlop(b);
+    expect(rB.confidence).toBeGreaterThan(rA.confidence);
+  });
 });
 
 describe('isAiImage offline paths', () => {

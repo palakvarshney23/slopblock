@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "license": "GPL-3.0-only",
   "description": "SlopBlock AI Slop Filter — Reclaim the internet from AI-generated slop.",
-  "homepage": "",
+  "homepage": "https://github.com/palakvarshney23/slopblock",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/palakvarshney23/slopblock.git"
   },
   "bugs": {
     "url": ""
@@ -23,10 +23,17 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "prestart": "node scripts/prestart.js",
+    "service": "node -e \"const s=require('./service');const c=require('./classifier');c.loadModel(()=>{},()=>{}).then(()=>s.start(()=>console.log('Service http://127.0.0.1:8083'))).catch(console.error)\"",
     "build": "electron-builder --win",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "demo": "node -e \"const s=require('./service');const c=require('./classifier');c.loadModel(()=>{},()=>{}).then(()=>s.start(()=>{})).then(()=>console.log('Demo service running on http://localhost:8083')).catch(console.error)\"",
+    "demo": "node scripts/run-demo.js",
+    "judge-demo": "node scripts/run-demo.js",
+    "verify-models": "node scripts/verify-models.js",
+    "verify-models:repair": "node scripts/verify-models.js --repair",
+    "preflight": "node scripts/preflight.js",
+    "test:marketplace": "node evaluation/marketplace-bakeoff.js --dataset evaluation/marketplace-sample.json --threshold 0.62",
     "lint": "eslint . --ext .js"
   },
   "build": {

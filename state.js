@@ -41,4 +41,7 @@ module.exports = {
   textAnalyzed: 0,
   imagesAnalyzed: 0,
   youtubeAnalyzed: 0,
+
+  reviewsAnalyzed: 0,
+  reviewsFlagged: 0,
 };

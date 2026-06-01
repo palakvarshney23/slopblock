@@ -109,7 +109,20 @@
 
 ---
 
-### GitHub — NEW Track A Live Fire (Hackathon Build)
+### Marketplaces — Track G (Amazon + eBay)
+
+| Content | Platform | Verdict | Confidence | Evidence |
+|---|---|---|---|---|
+| Generic 5★ review (no product specifics) | Amazon | **FLAGGED** | varies | `scoreReview`: product grounding + review clichés; reasons[] in banner |
+| Verified hub review with daily use detail | Amazon | **PASSED** | &lt;62% | Product tokens + use-detail corroboration (former 61% FP fixed) |
+| Templated eBay seller review | eBay | **FLAGGED** | varies | Short 5★ + phrase farm signals |
+| Technical review with model numbers | Amazon | **PASSED** | low | Experience markers + product tokens |
+
+**Implementation:** [`extension/marketplace.js`](../extension/marketplace.js) on `/dp/` and `/itm/` URLs. Reproduce metrics: `npm run test:marketplace`.
+
+---
+
+### GitHub — Track A (optional extension)
 
 | Content | Repo | Verdict | Confidence | Evidence |
 |---|---|---|---|

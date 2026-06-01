@@ -14,6 +14,20 @@
   },
   "content_scripts": [
     {
+      "matches": [
+        "*://*.amazon.com/*",
+        "*://*.amazon.co.uk/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.ca/*",
+        "*://*.amazon.in/*",
+        "https://www.ebay.com/*",
+        "https://www.ebay.co.uk/*"
+      ],
+      "js": ["marketplace-sites.js", "marketplace.js"],
+      "css": ["marketplace.css"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": ["https://*/*", "http://*/*"],
       "js": ["content.js"],
       "css": ["content.css"],

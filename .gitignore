@@ -31,11 +31,12 @@ models/*
 !models/ai-source-detector-onnx/
 !models/clip_video_probe.json
 
-# Training datasets (large — download via scripts/setup_celeb_df_dataset.py)
+# Training datasets (large — not shipped)
 data/
 
-# Training cache (embeddings, joblib probes — regenerate via scripts/train_clip_probe/)
+# Training cache
 cache/
+embeddings/
 
 # Python bytecode
 __pycache__/
@@ -47,18 +48,25 @@ extension/_metadata/
 # Packaged extension zip (build artifact)
 *.zip
 
-# User app data written at runtime
-config.json
+# User app data written at runtime (repo root only — not model config)
+/config.json
 counts.json
 settings.json
+
+# Secrets (Hugging Face token for dataset downloads)
+.hf_token
 
 # Tests and evaluation scripts
 test/
 __mocks__/
-jest.config.js
 eval/
 
 # Landing page lives in its own repo (slopblock-website)
 landing-page/
 
 seo/
+
+solelanding.html
+
+.env*
+.env

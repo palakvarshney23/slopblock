@@ -29,13 +29,29 @@
 
     const banner = document.createElement('div')
     banner.className = 'sf-github-warning'
-    banner.innerHTML = `<span class="sf-octicon">⚠️</span> <strong>SlopBlock:</strong> AI-generated content detected (${confidence}% confidence${method ? ` · ${method}` : ''}) — <button class="sf-dismiss">Dismiss</button>`
 
-    const btn = banner.querySelector('.sf-dismiss')
+    const icon = document.createElement('span')
+    icon.className = 'sf-octicon'
+    icon.textContent = '⚠️'
+    banner.appendChild(icon)
+    banner.appendChild(document.createTextNode(' '))
+
+    const strong = document.createElement('strong')
+    strong.textContent = 'SlopBlock:'
+    banner.appendChild(strong)
+    banner.appendChild(document.createTextNode(
+      ` AI-generated content detected (${confidence}% confidence${method ? ` · ${method}` : ''}) — `
+    ))
+
+    const btn = document.createElement('button')
+    btn.className = 'sf-dismiss'
+    btn.type = 'button'
+    btn.textContent = 'Dismiss'
     btn.addEventListener('click', () => {
       banner.remove()
       el.classList.remove('sf-github-slop-border')
     })
+    banner.appendChild(btn)
 
     el.classList.add('sf-github-slop-border')
     el.insertBefore(banner, el.firstChild)
@@ -46,7 +62,7 @@
     if (text.length < MIN_LEN) return
     try {
       const resp = await chrome.runtime.sendMessage({ type: 'classify', text })
-      if (resp?.ok && resp.data?.isSlop) {
+      if (resp?.ok && resp.data?.isSlop && !resp.data?.skipped) {
         _warn(el, resp.data.confidence, resp.data.method)
       }
     } catch (_) {}

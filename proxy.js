@@ -19,8 +19,19 @@ let safeSend       = () => {};
 let showWindow     = () => {};
 let injectedScript = '';
 let injectedStyles = '';
+let _proxyToken      = '';
 
 const recentSuggestions = new Map(); // hostname → timestamp (deduplication)
+
+function setAuthToken(token) {
+  _proxyToken = token || '';
+}
+
+function _proxyTokenOk(req) {
+  if (!_proxyToken) return false;
+  const incoming = req.headers['x-slopfilter-token'] || '';
+  return incoming === _proxyToken;
+}
 
 // ── Upstream proxy detection ───────────────────────────────────────────────────
 // Reads the OS-configured proxy at startup. Returns a proxyUrl string (http://...,
@@ -122,7 +133,8 @@ function processHtml(body, cspHeader) {
   }
   const nonceAttr = nonce ? ` nonce="${nonce}"` : '';
   const patterns  = JSON.stringify(state.TRUSTED_PATTERNS || []);
-  const configTag = `<script id="sf-config"${nonceAttr}>window.__sfTrustedPatterns=${patterns};</script>`;
+  const tokenJson = JSON.stringify(_proxyToken || '');
+  const configTag = `<script id="sf-config"${nonceAttr}>window.__sfTrustedPatterns=${patterns};window.__sfProxyToken=${tokenJson};</script>`;
   const styleTag  = `<style id="sf-styles"${nonceAttr}>${injectedStyles}</style>`;
   const scriptTag = `<script id="sf-script"${nonceAttr}>${injectedScript}</script>`;
   let result = body;
@@ -188,6 +200,9 @@ async function start(certsDir) {
         }
         if (!isRealBrowserRequest(req)) return;
         if (urlStr.endsWith('/__slop_filter_classify') && req.method === 'POST') {
+          if (!_proxyTokenOk(req)) {
+            return { response: { statusCode: 401, headers: { 'content-type': 'text/plain' }, body: '' } };
+          }
           try {
             const rawText = await req.body.getText();
             if (rawText.length > 50000) return { response: { statusCode: 413, headers: {}, body: '' } };
@@ -203,13 +218,16 @@ async function start(certsDir) {
             if (isSlop || Math.random() < 0.15) safeSend('classification-entry', { ts: Date.now(), type: 'text', outcome: isSlop ? 'blocked' : 'passed', target: _host, confidence: Math.round(confidence * 100) });
             return { response: { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ isSlop, confidence: Math.round(confidence * 100), method }) } };
           } catch (_) {
-            return { response: { statusCode: 200, headers: { 'content-type': 'application/json' }, body: '{"isSlop":false,"confidence":0}' } };
+            return { response: { statusCode: 200, headers: { 'content-type': 'application/json' }, body: '{"isSlop":false,"confidence":0,"skipped":true}' } };
           }
         }
         if (urlStr.endsWith('/__slop_filter_status') && req.method === 'GET') {
           return { response: { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enabled: state.FILTER_ENABLED, youtubeFilterEnabled: state.YOUTUBE_FILTER_ENABLED }) } };
         }
         if (urlStr.endsWith('/__slop_filter_youtube') && req.method === 'POST') {
+          if (!_proxyTokenOk(req)) {
+            return { response: { statusCode: 401, headers: {}, body: '' } };
+          }
           state.youtubeBlocked++;
           safeSend('youtube-count', state.youtubeBlocked);
           counts.schedule(state);
@@ -336,4 +354,4 @@ async function stop() {
   safeSend('proxy-status', false);
 }
 
-module.exports = { init, start, stop, PORT };
+module.exports = { init, start, stop, PORT, setAuthToken };

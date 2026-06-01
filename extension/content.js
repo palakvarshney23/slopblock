@@ -21,9 +21,12 @@
     '[data-testid="post-content"]',
     '.article-body p',
     'span[data-testid]',
-    '[class*="title"]',
-    '[class*="description"]',
-    '[class*="content"]',
+    '#customerReviews p',
+    '#cm_cr-review_list p',
+    '[data-hook="review"]',
+    '[data-hook="review-body"]',
+    '.review-text-content',
+    '#reviewsMedley [data-hook="review"]',
   ].join(', ');
 
   const VIDEO_META_SEL = [
@@ -91,7 +94,7 @@
   ];
 
   // These are updated from the server's /status config on every poll cycle.
-  let MIN_LEN         = 50;
+  let MIN_LEN         = 30;
   let IMG_MIN_PX      = 300;
   let IMG_DISP_MIN_PX = 200;
   let IMG_CONF_FORCE  = 92;
@@ -108,6 +111,11 @@
   const _SF_DEBUG = (typeof chrome !== 'undefined' && chrome.runtime?.id)
     ? (ctx, err) => console.debug(`[sf:${ctx}]`, err?.message ?? err)
     : () => {};
+
+  // Track G: marketplace.js sets this; skip generic paragraph/card text scan on Amazon/eBay.
+  function _skipMarketplaceText() {
+    return document.documentElement.dataset.sfMarketplace === '1';
+  }
 
   let filterEnabled         = true;
   let imageDetectionEnabled = true;
@@ -285,7 +293,7 @@
   async function pollStatus() {
     try {
       const resp = await chrome.runtime.sendMessage({ type: 'status' });
-      console.log('[SlopBlock] pollStatus resp:', resp?.ok, 'enabled=', resp?.data?.enabled, 'img=', resp?.data?.imageDetectionEnabled, 'vid=', resp?.data?.videoDetectionEnabled, 'yt=', resp?.data?.youtubeFilterEnabled, 'config=', resp?.data?.config);
+      console.debug('[SlopBlock] pollStatus resp:', resp?.ok, 'enabled=', resp?.data?.enabled, 'img=', resp?.data?.imageDetectionEnabled, 'vid=', resp?.data?.videoDetectionEnabled, 'yt=', resp?.data?.youtubeFilterEnabled, 'config=', resp?.data?.config);
       if (!resp?.ok) return;
       const data = resp.data;
       const patterns = data.trustedPatterns || [];
@@ -301,7 +309,7 @@
         videoObserver.disconnect();
         captionObserver.disconnect();
         clearInterval(statusTimer);
-        console.log('[SlopBlock] Skipping filtering on', location.href,
+        console.debug('[SlopBlock] Skipping filtering on', location.href,
           isBypassed ? '(bypass domain)' : '(trusted source)');
         return;
       }
@@ -660,7 +668,8 @@
         delete card.dataset.sfCardTextChecked; // allow retry on next poll cycle
         return;
       }
-      const { isSlop, confidence, method } = resp.data;
+      const { isSlop, confidence, method, skipped } = resp.data;
+      if (skipped) return;
       if (isSlop) applyCardSlop(card, confidence, 'text', undefined, method);
     } catch (err) { _SF_DEBUG('classify-card', err); }
   }
@@ -668,6 +677,7 @@
   // Scan root for post cards (or treat root itself as a card).
   // Called from the MutationObserver, SPA nav hooks, and startup.
   function _scanCardsIn(root) {
+    if (_skipMarketplaceText()) return;
     if (looksLikePostCard(root)) { classifyCardText(root); return; }
     const candidates = root.querySelectorAll?.('article, [role="article"], [role="listitem"], [role="feed"] > *');
     if (candidates) for (const el of candidates) { if (looksLikePostCard(el)) classifyCardText(el); }
@@ -677,12 +687,14 @@
   async function classifyRawText(text, onSlop) {
     const resp = await _batchClassifyText(text);
     if (!resp?.ok) return false;
-    const { isSlop, confidence, method } = resp.data;
+    const { isSlop, confidence, method, skipped } = resp.data;
+    if (skipped) return false;
     if (isSlop) onSlop?.(confidence, method);
     return true;
   }
 
   async function classifyText(el) {
+    if (_skipMarketplaceText()) return;
     if (!filterEnabled || el.dataset.slopChecked) return;
     if (el.dataset.sfVideoMetaChecked) return;
     if (document.documentElement.dataset.sfProxy === '1') return;
@@ -874,7 +886,9 @@ function getPagePriorAdjustment() {
 
       if (!resp?.ok) { _abortShield(img, shield, releaseHoverBlock); return; }
 
-      const { isAiImage, confidence, method } = resp.data;
+      const { isAiImage, confidence, method, skipped } = resp.data;
+      if (skipped) { _abortShield(img, shield, releaseHoverBlock); return; }
+
       _pageImageCacheSet(srcKey, { blocked: isAiImage, confidence });
       pageCompletedCount++;
       const adjustedConf = confidence + getPagePriorAdjustment();
@@ -1825,7 +1839,7 @@ function getPagePriorAdjustment() {
   setTimeout(() => {
     const texts = document.querySelectorAll(TEXT_SEL);
     const imgs  = document.querySelectorAll('img[src]');
-    console.log('[SlopBlock] Initial scan:', texts.length, 'text elements,', imgs.length, 'images, filter=', filterEnabled, 'imgFilter=', imageDetectionEnabled, 'vidFilter=', videoDetectionEnabled, 'ytFilter=', youtubeFilterEnabled, 'MIN_LEN=', MIN_LEN);
+    console.debug('[SlopBlock] Initial scan:', texts.length, 'text elements,', imgs.length, 'images, filter=', filterEnabled, 'imgFilter=', imageDetectionEnabled, 'vidFilter=', videoDetectionEnabled, 'ytFilter=', youtubeFilterEnabled, 'MIN_LEN=', MIN_LEN);
     _scanCardsIn(document.body);
     texts.forEach(classifyText);
     imgs.forEach(watchImage);

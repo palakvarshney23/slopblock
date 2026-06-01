@@ -5,8 +5,8 @@
 
 const http   = require('http');
 const crypto = require('crypto');
-const { isAiSlop, isAiImage, isAiImageFromBuffer } = require('./classifier');
-const { classifyVideoFrames, isVideoClassifierReady, classifyVideo } = require('./video_classifier');
+const { isAiSlop, scoreReview, isAiImage, isAiImageFromBuffer } = require('./classifier');
+const { isVideoClassifierReady, classifyVideo } = require('./video_classifier');
 const { debugLog, logError } = require('./logger');
 const state  = require('./state');
 const counts = require('./counts');
@@ -14,16 +14,50 @@ const config = require('./config');
 
 const PORT = Number(process.env.SLOPBLOCK_PORT) || 8083;
 let server = null;
+let _attached = false;
+let _safeSend = null;
+
+function _originAllowed(origin) {
+  if (!origin) return true;
+  return /^(chrome-extension|moz-extension|extension):\/\//.test(origin);
+}
 
 // ── Startup request token ──────────────────────────────────────────
-// Generated once at process start. The extension reads it from the shared
-// state and must send it as X-SlopFilter-Token on every request.
-// Prevents arbitrary web pages from calling the local API even if they
-// discover the port — they cannot read the token from the extension's context.
-const SERVICE_TOKEN = crypto.randomBytes(32).toString('hex');
+// Generated once at process start (or synced when attaching to an existing listener).
+// The extension reads it from the shared state and must send it as X-SlopFilter-Token
+// on every request.
+let SERVICE_TOKEN = crypto.randomBytes(32).toString('hex');
 
 // Exposed so main.js can pass it to the extension via IPC / injected config.
 function getServiceToken() { return SERVICE_TOKEN; }
+
+function isServiceReady() { return !!server || _attached; }
+
+function _notifyServiceStatus(extra = {}) {
+  _safeSend?.('service-status', { ok: true, port: PORT, ...extra });
+}
+
+function _probeExistingService() {
+  return new Promise((resolve) => {
+    const req = http.get(
+      { hostname: '127.0.0.1', port: PORT, path: '/status', timeout: 2000 },
+      (res) => {
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            resolve(res.statusCode === 200 && data.token ? data : null);
+          } catch {
+            resolve(null);
+          }
+        });
+      }
+    );
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
 
 // ── Token-bucket rate limiter ──────────────────────────────────────
 // Protects model inference from being flooded. Two independent buckets:
@@ -51,7 +85,12 @@ let _textBucket  = null;
 let _imageBucket = null;
 
 function start(safeSend) {
-  if (server) return;
+  _safeSend = safeSend || _safeSend;
+  if (server || _attached) {
+    _notifyServiceStatus({ attached: _attached });
+    return Promise.resolve({ ok: true, attached: _attached });
+  }
+
   _textBucket  = new TokenBucket(config.get('textRateLimitPerSec'),  config.get('textRateLimitPerSec'));
   _imageBucket = new TokenBucket(config.get('imageRateLimitPerSec'), config.get('imageRateLimitPerSec'));
 
@@ -61,7 +100,7 @@ function start(safeSend) {
     // cannot spoof a chrome-extension:// origin. Requests with no Origin
     // (e.g. same-origin, curl during dev) are allowed through.
     const origin = req.headers['origin'] || '';
-    const originOk = !origin || origin.startsWith('chrome-extension://');
+    const originOk = _originAllowed(origin);
     if (!originOk) {
       res.writeHead(403); res.end(); return;
     }
@@ -90,6 +129,8 @@ function start(safeSend) {
         textAnalyzed: state.textAnalyzed || 0,
         imagesAnalyzed: state.imagesAnalyzed || 0,
         youtubeAnalyzed: state.youtubeAnalyzed || 0,
+        reviewsAnalyzed: state.reviewsAnalyzed || 0,
+        reviewsFlagged: state.reviewsFlagged || 0,
         trustedPatterns: state.TRUSTED_PATTERNS || [],
         bypassDomains: state.BYPASS_DOMAINS || [],
         // Extension-relevant config subset — applied by content.js on next poll.
@@ -103,6 +144,8 @@ function start(safeSend) {
           imageForceConfidence: config.get('imageForceConfidence'),
           videoWarnThreshold:   config.get('videoWarnThreshold'),
           videoBlockThreshold:  config.get('videoBlockThreshold'),
+          reviewTextMinLength:  config.get('reviewTextMinLength'),
+          reviewThreshold:      config.get('reviewThreshold'),
         },
         videoWarnThreshold:  Math.round(config.get('videoWarnThreshold') * 100),
         videoBlockThreshold: Math.round(config.get('videoBlockThreshold') * 100),
@@ -119,8 +162,8 @@ function start(safeSend) {
     // ── Token validation ───────────────────────────────────────────
     const incomingToken = req.headers['x-slopfilter-token'] || '';
     const tokenRequired = req.method === 'POST' && (
-      req.url === '/classify' || req.url === '/classify-image' || req.url === '/classify-frame'
-        || req.url === '/classify-video' || req.url === '/youtube-block'
+      req.url === '/classify' || req.url === '/classify-review' || req.url === '/classify-image'
+        || req.url === '/classify-frame' || req.url === '/classify-video' || req.url === '/youtube-block'
     );
     if (tokenRequired && incomingToken !== SERVICE_TOKEN) {
       res.writeHead(401); res.end(); return;
@@ -175,7 +218,52 @@ function start(safeSend) {
         } catch (err) {
           logError(err);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ isSlop: false, confidence: 0 }));
+          res.end(JSON.stringify({ isSlop: false, confidence: 0, skipped: true }));
+        }
+      });
+      return;
+    }
+
+    // ── POST /classify-review (Track G — marketplace reviews) ───────
+    if (req.method === 'POST' && req.url === '/classify-review') {
+      if (!_textBucket.take()) { res.writeHead(429); res.end(); return; }
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk;
+        if (body.length > 8_192) { res.writeHead(413); res.end(); req.destroy(); return; }
+      });
+      req.on('end', async () => {
+        if (res.destroyed) return;
+        if (!state.FILTER_ENABLED) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ isSlop: false, confidence: 0, reasons: [], method: 'review' }));
+          return;
+        }
+        try {
+          const payload = JSON.parse(body || '{}');
+          const text = (payload.text || '').trim();
+          const ctx = payload.context || {};
+          state.reviewsAnalyzed++;
+          safeSend('reviews-analyzed', state.reviewsAnalyzed);
+          counts.schedule(state);
+          const result = await scoreReview(text, ctx);
+          if (result.isSlop) {
+            state.reviewsFlagged++;
+            safeSend('reviews-flagged', state.reviewsFlagged);
+            counts.schedule(state);
+          }
+          debugLog(`Review [${result.isSlop ? 'SLOP' : 'real'} ${Math.round(result.confidence * 100)}%]: "${text.slice(0, 60).replace(/\n/g, ' ')}"`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            isSlop: result.isSlop,
+            confidence: Math.round(result.confidence * 100),
+            reasons: result.reasons || [],
+            method: result.method || 'review',
+          }));
+        } catch (err) {
+          logError(err);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ isSlop: false, confidence: 0, reasons: [], method: 'review', skipped: true }));
         }
       });
       return;
@@ -223,7 +311,7 @@ function start(safeSend) {
         } catch (err) {
           logError(err);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ isAiImage: false, confidence: 0 }));
+          res.end(JSON.stringify({ isAiImage: false, confidence: 0, skipped: true }));
         }
       });
       return;
@@ -284,7 +372,7 @@ function start(safeSend) {
         } catch (err) {
           logError(err);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ isAiImage: false, confidence: 0, skipped: false }));
+          res.end(JSON.stringify({ isAiImage: false, confidence: 0, skipped: true }));
         }
       });
       return;
@@ -304,7 +392,7 @@ function start(safeSend) {
 
         if (!state.FILTER_ENABLED || !state.VIDEO_DETECTION_ENABLED) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ isAiVideo: false, confidence: 0, method: 'clip-linear-probe', framesAnalyzed: 0, skipped: true }));
+          res.end(JSON.stringify({ isAiVideo: false, confidence: 0, method: 'dinov2-disabled', framesAnalyzed: 0, skipped: true }));
           return;
         }
 
@@ -377,7 +465,7 @@ function start(safeSend) {
         } catch (err) {
           logError(err);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ isAiVideo: false, confidence: 0, method: 'clip-linear-probe', framesAnalyzed: 0, skipped: true }));
+          res.end(JSON.stringify({ isAiVideo: false, confidence: 0, method: 'dinov2-error', framesAnalyzed: 0, skipped: true }));
         }
       });
       return;
@@ -386,17 +474,49 @@ function start(safeSend) {
     res.writeHead(404); res.end();
   });
 
-  server.on('error', err => {
-    if (err.code === 'EADDRINUSE') logError(new Error(`Port ${PORT} already in use — service failed to start`));
-    else logError(err);
-  });
+  return new Promise((resolve) => {
+    server.on('error', async (err) => {
+      if (err.code === 'EADDRINUSE') {
+        const existing = await _probeExistingService();
+        if (existing?.token) {
+          server?.close();
+          server = null;
+          _attached = true;
+          SERVICE_TOKEN = existing.token;
+          debugLog(`Service attached to existing listener on http://127.0.0.1:${PORT}`);
+          _notifyServiceStatus({ attached: true });
+          resolve({ ok: true, attached: true });
+          return;
+        }
+        logError(new Error(`Port ${PORT} already in use — service failed to start`));
+        _safeSend?.('service-status', { ok: false, reason: 'port-in-use', port: PORT });
+        _safeSend?.('status-update',
+          `Classification service offline — port ${PORT} in use. Quit SlopBlock from the tray or run: npm run preflight`);
+        server?.close();
+        server = null;
+        resolve({ ok: false, attached: false, reason: 'port-in-use' });
+        return;
+      }
+      logError(err);
+      _safeSend?.('service-status', { ok: false, reason: 'error', port: PORT });
+      resolve({ ok: false, attached: false, reason: 'error' });
+    });
 
-  server.listen(PORT, '127.0.0.1', () => debugLog(`Service running on http://127.0.0.1:${PORT}`));
+    server.listen(PORT, '127.0.0.1', () => {
+      debugLog(`Service running on http://127.0.0.1:${PORT}`);
+      _notifyServiceStatus({ attached: false });
+      resolve({ ok: true, attached: false });
+    });
+  });
 }
 
 function stop() {
+  if (_attached) {
+    _attached = false;
+    return;
+  }
   server?.close();
   server = null;
 }
 
-module.exports = { start, stop, PORT, getServiceToken };
+module.exports = { start, stop, PORT, getServiceToken, isServiceReady };

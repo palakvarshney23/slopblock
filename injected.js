@@ -22,7 +22,14 @@
   const CLASSIFY_URL = '/__slop_filter_classify';
   const STATUS_URL   = '/__slop_filter_status';
   const SELECTORS    = 'p, blockquote, li:not(nav li):not(header li):not(footer li):not(aside li)';
-  const MIN_LEN      = 60;
+  const MIN_LEN      = 30;
+
+  function _proxyHeaders(extra) {
+    const h = Object.assign({}, extra);
+    const t = window.__sfProxyToken;
+    if (t) h['X-SlopFilter-Token'] = t;
+    return h;
+  }
 
   // Block-level tags that count as "child block elements" for the leaf-div check below.
   const BLOCK_TAGS = new Set(['P','DIV','SECTION','ARTICLE','BLOCKQUOTE','UL','OL','TABLE','PRE','H1','H2','H3','H4','H5','H6']);
@@ -312,7 +319,11 @@
   const REPORT_URL = '/__slop_filter_youtube';
 
   function reportYoutubeBlock() {
-    fetch(REPORT_URL, { method: 'POST', signal: AbortSignal.timeout(800) }).catch(() => {});
+    fetch(REPORT_URL, {
+      method: 'POST',
+      headers: _proxyHeaders(),
+      signal: AbortSignal.timeout(800),
+    }).catch(() => {});
   }
 
   function getVideoCard(el) {
@@ -507,11 +518,12 @@
       const r = await fetch(CLASSIFY_URL, {
         method: 'POST',
         body: text,
-        headers: { 'Content-Type': 'text/plain' },
+        headers: _proxyHeaders({ 'Content-Type': 'text/plain' }),
         signal: AbortSignal.timeout(10000),
       });
       if (!r.ok) return;
-      const { isSlop, confidence, method } = await r.json();
+      const { isSlop, confidence, method, skipped } = await r.json();
+      if (skipped) return;
       if (isSlop) applyCardSlop(card, confidence, 'text', undefined, method);
     } catch (err) { _sfDebug('classify-card', err); }
   }
@@ -538,11 +550,12 @@
       const r = await fetch(CLASSIFY_URL, {
         method: 'POST',
         body: getClassifyText(el),
-        headers: { 'Content-Type': 'text/plain' },
+        headers: _proxyHeaders({ 'Content-Type': 'text/plain' }),
         signal: AbortSignal.timeout(10000),
       });
       if (!r.ok) return;
-      const { isSlop, confidence, method } = await r.json();
+      const { isSlop, confidence, method, skipped } = await r.json();
+      if (skipped) return;
       if (isSlop) applySlop(el, confidence, method);
     } catch (err) { _sfDebug('classify', err); }
   }

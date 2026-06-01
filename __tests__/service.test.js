@@ -15,6 +15,8 @@ const state = {
   filteredCount: 0,
   imagesBlocked: 0,
   youtubeBlocked: 0,
+  reviewsAnalyzed: 0,
+  reviewsFlagged: 0,
   TRUSTED_PATTERNS: []
 }
 
@@ -39,7 +41,7 @@ function request(options, body) {
 }
 
 describe('service.js', () => {
-  beforeAll(() => start(() => {}))
+  beforeAll(async () => { await start(() => {}); })
   afterAll(() => stop())
 
   test('GET /status returns service state and bootstrap token', async () => {
@@ -112,6 +114,26 @@ describe('service.js', () => {
     expect(data.confidence).toBeLessThan(50)
   })
 
+  test('POST /classify-review returns reasons array', async () => {
+    const statusRes = await request({ path: '/status', method: 'GET' })
+    const token = JSON.parse(statusRes.body).token
+    const payload = JSON.stringify({
+      text: 'Amazing product! Five stars! Highly recommend! Game changer! Must-have!',
+      context: { stars: 5, productTitle: 'Wireless Mouse MX', siblingReviewTexts: [] },
+    });
+    const res = await request({
+      path: '/classify-review',
+      method: 'POST',
+      headers: { 'X-SlopFilter-Token': token, 'Content-Type': 'application/json' },
+    }, payload);
+    expect(res.status).toBe(200);
+    const data = JSON.parse(res.body);
+    expect(Array.isArray(data.reasons)).toBe(true);
+    expect(typeof data.confidence).toBe('number');
+    expect(typeof data.isSlop).toBe('boolean');
+    expect(data.method).toContain('review');
+  });
+
   test('POST /classify-image without token returns 401', async () => {
     const res = await request({ path: '/classify-image', method: 'POST' }, 'http://example.com/img.jpg')
     expect(res.status).toBe(401)
@@ -159,6 +181,15 @@ describe('service.js', () => {
       path: '/status',
       method: 'GET',
       headers: { 'Origin': 'chrome-extension://nfbpghkbijdkkfbceienbgbjkeobglib' }
+    })
+    expect(res.status).toBe(200)
+  })
+
+  test('CORS allows moz-extension origin (Firefox)', async () => {
+    const res = await request({
+      path: '/status',
+      method: 'GET',
+      headers: { 'Origin': 'moz-extension://slopblock@localhost' }
     })
     expect(res.status).toBe(200)
   })

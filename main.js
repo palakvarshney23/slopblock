@@ -15,6 +15,7 @@ const classifier       = require('./classifier');
 const videoClassifier  = require('./video_classifier');
 const proxy            = require('./proxy');
 const service          = require('./service');
+const { verifyModels } = require('./scripts/verify-models');
 const gpuDetector      = require('./gpu_detector');
 
 process.on('uncaughtException',  err => logger.logError(err));
@@ -76,19 +77,22 @@ function _saveSettings(patch) {
   } catch (err) { logger.logError(err); }
 }
 
+function _imageModelBasePath() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'models', 'ai-source-detector-onnx')
+    : path.join(__dirname, 'models', 'ai-source-detector-onnx');
+}
+
+function _imageModelBundleOnDisk() {
+  return classifier.isImageModelBundleReady(_imageModelBasePath());
+}
+
 function _getSettings() {
   const saved = _loadSettings();
-  // Auto-migrate: if imageModelsReady was never persisted but the model file
-  // is already on disk (installed before the settings system existed), mark ready.
-  if (!saved.imageModelsReady) {
-    const _modelBase = app.isPackaged
-      ? path.join(process.resourcesPath, 'models', 'ai-source-detector-onnx')
-      : path.join(__dirname, 'models', 'ai-source-detector-onnx');
-    const modelFile = path.join(_modelBase, 'onnx', 'model_quantized.onnx');
-    if (fs.existsSync(modelFile)) {
-      saved.imageModelsReady = true;
-      _saveSettings({ imageModelsReady: true });
-    }
+  // Auto-migrate: mark image bundle ready only when config + ONNX are both present.
+  if (!saved.imageModelsReady && _imageModelBundleOnDisk()) {
+    saved.imageModelsReady = true;
+    _saveSettings({ imageModelsReady: true });
   }
   return { ...SETTINGS_DEFAULTS, ...saved };
 }
@@ -187,10 +191,17 @@ const BROWSER_PATHS = {
     path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Opera', 'opera.exe'),
     path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Opera GX', 'opera.exe'),
   ],
+  'firefox.exe': [
+    'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
+    'C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe',
+  ],
 };
 
-function openBrowserExtensionsPage(callback) {
-  for (const [, exe, url] of BROWSER_MAP) {
+function openBrowserExtensionsPage(callback, preferredExe) {
+  const browsers = preferredExe
+    ? BROWSER_MAP.filter(([, exe]) => exe === preferredExe)
+    : BROWSER_MAP;
+  for (const [, exe, url] of browsers) {
     const paths = BROWSER_PATHS[exe] || [];
     const found = paths.find(p => fs.existsSync(p));
     if (found) {
@@ -200,8 +211,9 @@ function openBrowserExtensionsPage(callback) {
       return callback(null);
     }
   }
-  // Fallback: try shell.openExternal with chrome://extensions (works for default browser)
-  shell.openExternal('chrome://extensions').catch(() => {});
+  // Fallback: open the extensions URL in the default browser (use target URL when preferred)
+  const fallbackUrl = browsers[0]?.[2] || 'chrome://extensions';
+  shell.openExternal(fallbackUrl).catch(() => {});
   callback(null);
 }
 
@@ -226,7 +238,7 @@ function installExtension() {
 }
 
 function installFirefoxExtension() {
-  openBrowserExtensionsPage(() => {});
+  openBrowserExtensionsPage(() => {}, 'firefox.exe');
 }
 
 // ── Image model loading ───────────────────────────────────────────
@@ -421,6 +433,55 @@ function createWindow() {
   });
 }
 
+// Heavy ONNX/HuggingFace loads — run after the window and HTTP service are up.
+async function _deferredModelInit(modelDir, settings) {
+  try {
+    const gpuInfo = await gpuDetector.detectGPU({ quick: true });
+    safeSend('gpu-status', {
+      ...gpuInfo,
+      enabled: videoClassifier.isGPUEnabled(),
+      loading: true,
+    });
+    logger.debugLog(`GPU (quick): ${gpuInfo.name || 'none'}`);
+
+    if (settings.gpuEnabled) {
+      const fullGpu = await gpuDetector.detectDirectML();
+      if (fullGpu.available) {
+        await videoClassifier.setGPUEnabled(true);
+        logger.debugLog('GPU acceleration enabled (DirectML)');
+      }
+      safeSend('gpu-status', {
+        ...fullGpu,
+        enabled: videoClassifier.isGPUEnabled(),
+        loading: false,
+      });
+    }
+
+    logger.debugLog('[Main] Loading video model (background)...');
+    await videoClassifier.loadVideoModel(modelDir);
+    const probeReady = videoClassifier.isVideoClassifierReady();
+    logger.debugLog(`[Main] Video model ready=${probeReady}`);
+    safeSend('video-probe-ready', probeReady);
+
+    state.VIDEO_DETECTION_ENABLED = settings.defaultVideoDetection
+      && probeReady
+      && isExtensionInstalled();
+    safeSend('video-detection-status', state.VIDEO_DETECTION_ENABLED);
+
+    if (!settings.gpuEnabled) {
+      safeSend('gpu-status', {
+        ...gpuDetector.getGPUStatus(),
+        enabled: false,
+        loading: false,
+      });
+    }
+  } catch (e) {
+    logger.logError(e);
+    safeSend('video-probe-ready', false);
+    safeSend('gpu-status', { ...gpuDetector.getGPUStatus(), enabled: false, loading: false });
+  }
+}
+
 // ── App lifecycle ─────────────────────────────────────────────────
 app.whenReady().then(async () => {
   const userData = app.getPath('userData');
@@ -428,28 +489,9 @@ app.whenReady().then(async () => {
   counts.init(userData);
   config.init(userData);
 
-    const modelDir = app.isPackaged
-      ? path.join(process.resourcesPath, 'models')
-      : path.join(__dirname, 'models');
-    try {
-      logger.debugLog('[Main] Loading video model...');
-      await videoClassifier.loadVideoModel(modelDir);
-      logger.debugLog(`[Main] Video model loaded, ready=${videoClassifier.isVideoClassifierReady()}`);
-      safeSend('video-probe-ready', videoClassifier.isVideoClassifierReady());
-    } catch (e) {
-      logger.logError(e);
-      logger.debugLog(`[Main] Video model failed: ${e.message}`);
-      safeSend('video-probe-ready', false);
-    }
-
-  // Detect GPU and notify renderer
-  let gpuInfo = { available: false, name: null, type: null, vram: 0 };
-  try {
-    gpuInfo = await gpuDetector.detectGPU();
-    logger.debugLog(`GPU detected: ${gpuInfo.name || 'none'} (available=${gpuInfo.available})`);
-  } catch (e) {
-    logger.logError(e);
-  }
+  const modelDir = app.isPackaged
+    ? path.join(process.resourcesPath, 'models')
+    : path.join(__dirname, 'models');
 
   // Load and apply persisted settings
   const settings = _getSettings();
@@ -458,20 +500,13 @@ app.whenReady().then(async () => {
   state.IMAGE_DETECTION_ENABLED  = settings.defaultImageDetection
     && settings.imageModelsReady
     && isExtensionInstalled();
-  state.VIDEO_DETECTION_ENABLED  = settings.defaultVideoDetection
-    && videoClassifier.isVideoClassifierReady()
-    && isExtensionInstalled();
+  // Video classifier loads in background — enable once probe is ready.
+  state.VIDEO_DETECTION_ENABLED  = false;
   state.YOUTUBE_FILTER_ENABLED   = settings.defaultYoutubeFilter;
   state.PROXY_ENABLED            = settings.PROXY_ENABLED;
   state.BYPASS_DOMAINS           = settings.BYPASS_DOMAINS || state.BYPASS_DOMAINS;
   state.TRUSTED_PATTERNS         = settings.TRUSTED_PATTERNS || [];
   app.setLoginItemSettings({ openAtLogin: settings.launchAtStartup, openAsHidden: true });
-
-    // Apply persisted GPU preference if a GPU is actually available
-    if (settings.gpuEnabled && gpuInfo.available) {
-      await videoClassifier.setGPUEnabled(true);
-      logger.debugLog('GPU acceleration enabled (DirectML)');
-    }
 
   // Seed in-memory counters from persisted all-time totals
   const savedCounts       = counts.load();
@@ -514,6 +549,16 @@ app.whenReady().then(async () => {
 
   createWindow();
 
+  // Repair/download missing config.json before image model load.
+  try {
+    const bundle = await verifyModels({ repair: true, warn: true });
+    if (!bundle.ok) {
+      safeSend('status-update', 'Image model bundle incomplete — run: npm run verify-models -- --repair && git lfs pull');
+    }
+  } catch (e) {
+    logger.logError(e);
+  }
+
   tray = new Tray(path.join(__dirname, 'icon.png'));
   tray.setToolTip('SlopBlock — AI Slop Filter');
   tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus(); });
@@ -527,6 +572,10 @@ app.whenReady().then(async () => {
     }
   }, userData);
 
+  // Token must match the active listener (including attach-to-existing on :8083).
+  await service.start(safeSend);
+  proxy.setAuthToken(service.getServiceToken());
+
   if (state.PROXY_ENABLED) {
     const ok = await proxy.start(certsDir);
     if (ok) {
@@ -538,8 +587,10 @@ app.whenReady().then(async () => {
     }
   }
 
-  service.start(safeSend);
   classifier.loadModel(msg => safeSend('status-update', msg));
+
+  // Non-blocking: video probe + optional DirectML test (was blocking window for 30s+).
+  setImmediate(() => _deferredModelInit(modelDir, settings));
 });
 
 // ── IPC handlers ──────────────────────────────────────────────────
@@ -566,15 +617,20 @@ ipcMain.on('toggle-youtube-filter',  () => {
 ipcMain.on('toggle-proxy',           toggleProxy);
 
 ipcMain.on('toggle-gpu', async () => {
-  const gpuInfo = gpuDetector.getGPUStatus();
+  let gpuInfo = gpuDetector.getGPUStatus();
+  const turningOn = !videoClassifier.isGPUEnabled();
+  if (turningOn && !gpuInfo.dmlTested) {
+    safeSend('status-update', 'Testing DirectML (one-time, may take a minute)...');
+    gpuInfo = await gpuDetector.detectDirectML();
+  }
   if (!gpuInfo.available) {
     safeSend('status-update', 'No GPU detected — cannot enable acceleration');
     safeSend('gpu-status', { ...gpuInfo, enabled: false });
     return;
   }
-    const newState = !videoClassifier.isGPUEnabled();
-    await videoClassifier.setGPUEnabled(newState);
-    _saveSettings({ gpuEnabled: newState });
+  const newState = turningOn;
+  await videoClassifier.setGPUEnabled(newState);
+  _saveSettings({ gpuEnabled: newState });
   safeSend('gpu-status', { ...gpuInfo, enabled: newState });
   safeSend('status-update', `GPU acceleration ${newState ? 'enabled' : 'disabled'} (${gpuInfo.name})`);
   logger.debugLog(`GPU toggled: ${newState ? 'ON' : 'OFF'} (${gpuInfo.name})`);
@@ -787,8 +843,9 @@ ipcMain.on('remove-trusted-pattern', (_, pattern) => {
 app.on('before-quit', () => { isQuitting = true; });
 
 app.on('will-quit', () => {
-  // Remove system proxy on clean exit so the browser doesn't get stuck
   try { setSystemProxy(false); } catch {}
+  try { service.stop(); } catch {}
+  try { proxy.stop(); } catch {}
 });
 
 app.on('window-all-closed', () => {
