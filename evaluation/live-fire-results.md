@@ -1,8 +1,11 @@
 # Live Fire Evaluation Results
 
-**Date:** 2026-05-31  
+**Hackathon:** Slop Scan · **May 29 – Jun 1, 2026**  
+**Date:** 2026-05-31 (wild browsing during hacking window)  
 **Method:** Real-time detection against live content from the wild  
 **Tool:** SlopBlock v1.0.0 (browser extension + local service)
+
+> Separate from the JSON bake-off in `BAKEOFF_RESULTS.md`. Screenshots referenced below were captured locally during the session; paths under `evaluation/live-fire/` are optional judge artifacts (not required in git).
 
 ---
 

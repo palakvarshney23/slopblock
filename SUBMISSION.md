@@ -62,7 +62,7 @@ Full desktop app: `npm start` + load `extension/` unpacked.
 
 | Metric | Value |
 |--------|-------|
-| Bake-off macro (n=500) | 82% accuracy, 9.7% FPR |
+| Bake-off macro (n=30, May 31 run) | 96.7% accuracy, 6.7% FPR (`bake-off.js --all --full`) |
 | Live-fire high-confidence (≥75%) | **100%** correct on 42 wild samples |
 | Marketplace eval (n=26) | 84.6% acc, 0% FPR |
 

@@ -56,7 +56,7 @@ Also update: [`SUBMISSION.md`](SUBMISSION.md) · [`README.md`](README.md#demo-vi
 ## Scene 4 — Honest numbers (1:45–2:15)
 
 **Show:** `evaluation/BAKEOFF_RESULTS.md` or `live-fire-results.md` aggregate table — highlight:
-- 82% bake-off macro accuracy
+- 96.7% bake-off macro accuracy on n=30 curated subset (`bake-off.js --all --full`)
 - 100% correct on high-confidence (≥75%) live-fire
 - Failures in the 45–65% band documented
 

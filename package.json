@@ -34,6 +34,7 @@
     "verify-models:repair": "node scripts/verify-models.js --repair",
     "preflight": "node scripts/preflight.js",
     "test:marketplace": "node evaluation/marketplace-bakeoff.js --dataset evaluation/marketplace-sample.json --threshold 0.62",
+    "test:bakeoff": "node evaluation/bake-off.js --all --full",
     "lint": "eslint . --ext .js"
   },
   "build": {

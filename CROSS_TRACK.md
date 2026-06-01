@@ -72,7 +72,7 @@ Both text routes call the same underlying phrase list, stylometrics, and ONNX en
 ```bash
 npm run demo
 # demo.html → "SEO Slop" sample (expect ≥85% slop)
-node evaluation/bake-off.js --dataset ghostbuster-sample-100.json --threshold 0.60
+node evaluation/bake-off.js --all --full
 ```
 
 ---
@@ -101,7 +101,7 @@ npm run test:marketplace
 1. **One ONNX text ensemble** scores social posts, blog paragraphs, and review bodies.
 2. **One service token** on `:8083` — extension never calls external URLs.
 3. **One test suite** — [`__tests__/classifier.test.js`](__tests__/classifier.test.js), [`__tests__/review-scorer.test.js`](__tests__/review-scorer.test.js).
-4. **Bake-off macro (n=500)** spans HC3 (general), social sample (H proxy), Ghostbuster abstracts (E proxy) — [`evaluation/BAKEOFF_RESULTS.md`](evaluation/BAKEOFF_RESULTS.md).
+4. **Bake-off macro (n=30)** spans HC3-style, social-style, and Ghostbuster-style samples — [`evaluation/BAKEOFF_RESULTS.md`](evaluation/BAKEOFF_RESULTS.md).
 
 ---
 

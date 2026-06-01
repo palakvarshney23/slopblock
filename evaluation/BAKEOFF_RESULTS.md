@@ -1,202 +1,157 @@
 # Bake-Off Evaluation Results
 
-**Date:** 2026-05-27  
-**Evaluator:** Automated bake-off script (`evaluation/bake-off.js`)  
-**Models tested:** SlopBlock v1.0.0 text ensemble (Model 1 + Model 2 + heuristic + stylometric)
+**Hackathon:** Slop Scan · **May 29 – Jun 1, 2026** (UTC)  
+**Evaluation run:** 2026-05-31 (IST), during the hacking window  
+**Evaluator:** `evaluation/bake-off.js` with `--full` (tmr-ai + e5-lora + heuristics + stylometric)  
+**Decision threshold:** `0.55` (`config.js` default — same as production)
+
+---
+
+## Scope and honesty
+
+Bake-off JSON files use legacy filenames (`*-100`, `*-200`) but each file currently holds **n = 10** labeled samples (5 human / 5 AI) curated **during the hackathon** (commit `2026-05-30` eval framework). This is a **reproducible subset** for judges, not a full HC3/Ghostbuster export.
+
+| File | Samples | Collected |
+|------|---------|-----------|
+| `hc3-sample-100.json` | 10 | May 30, 2026 |
+| `ghostbuster-sample-100.json` | 10 | May 30, 2026 |
+| `social-sample-200.json` | 10 | May 30, 2026 |
+
+Wild browsing evidence is separate: see `evaluation/live-fire-results.md` (Live Fire bonus, May 31).
 
 ---
 
 ## Datasets
 
-### Dataset A: HC3 Sample (n = 200)
-Source: [HelloSimpleAI/HC3](https://huggingface.co/datasets/HelloSimpleAI/HC3)  
-Composition: 100 human Reddit answers + 100 ChatGPT answers to the same questions  
-Domain: General Q&A, technical, lifestyle, advice
+### Dataset A: HC3-style Q&A (n = 10)
 
-### Dataset B: Ghostbuster Academic (n = 100)
-Source: [vi-even/ghostbuster-abstracts](https://huggingface.co/datasets/)  
-Composition: 50 human-written CS paper abstracts + 50 AI-generated abstracts  
-Domain: Computer science research
+Inspired by [HelloSimpleAI/HC3](https://huggingface.co/datasets/HelloSimpleAI/HC3) — paired human Reddit answers vs ChatGPT-style answers.  
+Domain: general Q&A, technical, lifestyle.
 
-### Dataset C: Social Media Live Fire (n = 200)
-Source: Manually collected from X/Twitter, Reddit, LinkedIn feeds (May 2026)  
-Composition: 100 confirmed human posts + 100 confirmed AI-generated posts (verified via author disclosure or obvious markers)  
-Domain: Social media engagement, corporate comms, tech threads
+### Dataset B: Ghostbuster-style academic (n = 10)
+
+Inspired by Ghostbuster-style CS abstracts — human vs AI-generated research prose.  
+Domain: computer science abstracts (synthetic *content* may cite venues like NeurIPS 2024; that is sample text, not a repo date).
+
+### Dataset C: Social-style posts (n = 10)
+
+Hand-authored samples mimicking X/LinkedIn/Reddit tone — **not** the Live Fire wild-browse log.  
+Domain: engagement bait, corporate posts, casual human rants.
 
 ---
 
-## Overall Ensemble Results
+## Full ensemble results (reproducible)
 
-### Dataset A — HC3 Sample (n=200)
+Run:
+
+```bash
+npm install
+git lfs pull
+node evaluation/bake-off.js --all --full
+```
+
+### Dataset A — HC3-style (n = 10)
 
 ```
                         Predicted
                  Human      AI
-Actual Human      91         9     (100)
-Actual AI          27        73     (100)
+Actual Human        5          0     (5)
+Actual AI            0         5     (5)
 
-Accuracy:   82.0%
-Precision:  89.0%  (73 / 82)
-Recall:     73.0%  (73 / 100)
-F1 Score:   80.3%
-FPR:        9.0%   (9 / 100)
+Accuracy:  100.0%
+Precision: 100.0%
+Recall:    100.0%
+F1 Score:  100.0%
+FPR:       0.0%
 ```
 
-### Dataset B — Ghostbuster Academic (n=100)
-
-```
-                        Predicted
-                 Human      AI
-Actual Human      46         4     (50)
-Actual AI          14        36     (50)
-
-Accuracy:   82.0%
-Precision:  90.0%  (36 / 40)
-Recall:     72.0%  (36 / 50)
-F1 Score:   80.0%
-FPR:        8.0%   (4 / 50)
-```
-
-### Dataset C — Social Media (n=200)
+### Dataset B — Ghostbuster-style (n = 10)
 
 ```
                         Predicted
                  Human      AI
-Actual Human      88        12     (100)
-Actual AI          24        76     (100)
+Actual Human        4          1     (5)
+Actual AI            0         5     (5)
 
-Accuracy:   82.0%
-Precision:  86.4%  (76 / 88)
-Recall:     76.0%  (76 / 100)
-F1 Score:   80.9%
-FPR:        12.0%  (12 / 100)
+Accuracy:   90.0%
+Precision:  83.3%
+Recall:    100.0%
+F1 Score:   90.9%
+FPR:       20.0%
 ```
 
-### Combined Macro Average
+*False positive:* one human abstract scored above threshold (formal academic register).
+
+### Dataset C — Social-style (n = 10)
 
 ```
-Accuracy:   82.0%
-Precision:  88.5%
-Recall:     73.7%
-F1 Score:   80.4%
-FPR:        9.7%
+                        Predicted
+                 Human      AI
+Actual Human        5          0     (5)
+Actual AI            0         5     (5)
+
+Accuracy:  100.0%
+Precision: 100.0%
+Recall:    100.0%
+F1 Score:  100.0%
+FPR:       0.0%
 ```
 
----
+### Combined macro average (n = 30)
 
-## Per-Signal Breakdown
+```
+Accuracy:   96.7%
+Precision:  94.4%
+Recall:    100.0%
+F1 Score:   97.0%
+FPR:        6.7%
+```
 
-Tested each signal in isolation on Dataset A to measure independent contribution:
-
-| Signal | Precision | Recall | F1 | False Positive Rate |
-|---|---|---|---|---|
-| Heuristic only (phrases) | 94% | 42% | 58% | 3% |
-| Model 1 only (tmr-ai) | 78% | 71% | 74% | 18% |
-| Model 2 only (e5-lora) | 76% | 68% | 72% | 20% |
-| Ensemble (M1+M2) | 88% | 79% | 83% | 12% |
-| + Heuristic blend | 91% | 73% | 81% | 9% |
-| + Stylometric | 92% | 75% | 83% | 9% |
-
-**Interpretation:**
-- Heuristic alone is a **precision monster** — when it fires, it's almost always right (94% precision, 3% FPR). But it only catches 42% of AI slop.
-- Model 1 is a **recall engine** — catches 71% of AI text, but flags 18% of human text.
-- The ensemble combines the best of both: **91% precision, 73% recall**.
-- Stylometric adds a small boost on longer texts where structural signals are reliable.
+**Note:** Small-n metrics are optimistic on this curated set. Judges should treat macro numbers as **reproducible smoke validation**, not a claim of 500-sample benchmark coverage.
 
 ---
 
-## Threshold Sensitivity Analysis
+## Heuristic-only proxy (not submission metrics)
 
-How precision and recall change at different decision thresholds (Dataset A):
-
-| Threshold | Precision | Recall | F1 | FPR | Human posts flagged |
-|---|---|---|---|---|---|
-| 0.40 | 78% | 89% | 83% | 19% | 19 |
-| 0.50 | 84% | 82% | 83% | 14% | 14 |
-| 0.60 (default) | 89% | 73% | 80% | 9% | 9 |
-| 0.70 | 93% | 61% | 74% | 5% | 5 |
-| 0.80 | 96% | 47% | 63% | 2% | 2 |
-
-**Recommendation:** The default 0.60 threshold balances precision and recall for general browsing. Users who hate false positives more than missed slop should raise to 0.70. Users who want maximum slop blocking and don't mind occasional human posts blurred should lower to 0.50.
+Without `--full`, the script uses heuristic + stylometric proxy only. On the same n = 30 at threshold 0.55, macro accuracy is **50%** (no AI positives). Production scoring always uses the full ensemble when models are loaded.
 
 ---
 
-## Short-Text Gate Impact
+## Design-time signal roles (qualitative)
 
-Tested texts < 280 characters separately (Dataset C subset, n=80):
+From hackathon tuning on extension traffic and demo texts (not re-run per row here):
 
-| Configuration | Precision | Recall | FPR |
-|---|---|---|---|
-| No gate (model unblended) | 72% | 85% | 24% |
-| With short-text gate | 84% | 71% | 14% |
-| With gate + heuristic corroboration | 89% | 66% | 9% |
+| Signal | Role |
+|--------|------|
+| Heuristic phrases | High precision when they fire; low recall alone |
+| Model 1 (tmr-ai) | Strong recall on obvious AI |
+| Model 2 (e5-lora) | Corroborates M1; reduces single-model false positives |
+| Stylometric | Boost on longer uniform prose |
+| Short-text gate | Lowers FPR on social snippets under 280 chars |
 
-**Impact:** The short-text gate reduces false positives by **10 percentage points** on social media while only sacrificing 14 percentage points of recall — a massive win for practical browsing.
-
----
-
-## Failure Modes (Where It Misses)
-
-Analyzed the 27 false negatives (AI text marked as human) in Dataset A:
-
-| Failure Category | Count | % of FN | Description |
-|---|---|---|---|
-| Heavily edited AI | 9 | 33% | Human significantly rewrote AI output; varied sentence lengths, added personal anecdotes |
-| Short AI + no phrases | 6 | 22% | Sub-200-char text with no blocklist hits; model alone insufficient |
-| AI mimicking casual tone | 5 | 19% | Deliberately injected typos, slang, URLs to appear human |
-| Domain-specific expertise | 4 | 15% | AI generated highly technical content with real citations; stylometric signals weak |
-| Model disagreement | 3 | 11% | M1 and M2 disagreed; ensemble averaged below threshold |
-
-**Analyzed the 9 false positives (human text marked as AI) in Dataset A:**
-
-| Failure Category | Count | % of FP | Description |
-|---|---|---|---|
-| Formal register | 4 | 44% | Human wrote in corporate/academic style; uniform sentence structure |
-| SEO/copywriting background | 3 | 33% | Professional writer mimicking "optimized" prose; phrase hits |
-| Non-native English | 2 | 22% | Simpler vocabulary + uniform syntax triggered lexical diversity gate |
+Default threshold **0.55** balances recall and FPR for browsing; raise toward **0.70** for fewer false positives.
 
 ---
 
-## Image Detection Results
+## Image / video detection
 
-Tested on 100 images (50 real photos, 50 AI-generated):
-
-| Layer | Coverage | Precision | Recall | F1 |
-|---|---|---|---|---|
-| C2PA / metadata | 8% of AI | 100% | 100% | 100% |
-| PNG chunk forensics | 34% of AI | 98% | 96% | 97% |
-| URL forensics | 22% of AI | 100% | 100% | 100% |
-| ML Ensemble (A+B+C) | 94% of AI | 89% | 88% | 88% |
-| **Combined** | **94%** | **91%** | **90%** | **90%** |
-
-Note: The 6% of AI images missed were heavily edited (photoshopped AI base) or screenshots of AI images (which are technically real screenshots).
+Image ONNX ensemble and CLIP video probe were integrated **May 31 – Jun 1** (see `HACKATHON_TIMELINE.md`). Image bake-off tables are not part of this text JSON bake-off; video metrics live in `models/clip_video_probe.json` and `evaluation/marketplace-bakeoff.js`.
 
 ---
 
 ## Conclusion
 
-**SlopBlock catches ~73–76% of AI-generated text with ~9–12% false positive rate** across general web content and social media. This is not a perfect detector — we are honest about that. But it is a **practical, installable, privacy-preserving tool** that surfaces low-effort AI content so users can make their own call.
-
-The 25–27% of AI slop that gets through is predominantly:
-1. Heavily human-edited AI output
-2. Domain-expert AI with real citations and varied structure
-3. Short casual AI that avoids all phrase triggers
-
-These are the **hardest cases** and catching them would require sending content to a cloud API for deeper semantic analysis — which would destroy the on-device privacy guarantee.
-
-**We chose the tradeoff: 73% recall, 9% FPR, 100% on-device.**
+On the **hackathon-curated n = 30** bake-off subset, the **full on-device text ensemble** achieves **96.7% macro accuracy** and **6.7% macro FPR** at threshold 0.55, with **100% recall** on this small set. SlopBlock remains a practical privacy-first filter, not a perfect detector — larger corpora would be post-hackathon work.
 
 ---
 
-## Reproducibility
+## Timeline cross-check
 
-To reproduce these results:
+| Check | Result |
+|-------|--------|
+| Earliest git commit | 2026-05-29 21:00 IST |
+| Bake-off artifacts committed | 2026-05-30 |
+| This results doc | 2026-05-31 run |
+| Pre–May 29 dates in repo docs | Removed (was `2026-05-27` in an earlier draft) |
 
-```bash
-cd evaluation
-node bake-off.js --dataset hc3-sample-100.json --threshold 0.60
-node bake-off.js --dataset ghostbuster-sample-100.json --threshold 0.60
-node bake-off.js --dataset social-sample-200.json --threshold 0.60
-```
-
-Full source code for the evaluation script is in `evaluation/bake-off.js`.
+See `HACKATHON_TIMELINE.md` for the full audit.

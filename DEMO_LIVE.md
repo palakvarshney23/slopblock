@@ -44,7 +44,7 @@ Record 2–3 minutes per DEMO_SCRIPT before submitting to the portal.
 | **0:30–1:30** | `demo.html` → Analyze **AI sample** → **human sample** | “Same API the extension uses. Slop above threshold, human below. Dual ML + heuristics, not GPTZero.” |
 | **1:30–2:30** | Extension on feed OR second demo tab **AI LinkedIn** sample | “Card-level blur on real sites. Short-text gate stops false blocks on banter.” |
 | **2:30–3:30** | **SEO Slop** sample OR Amazon `/dp/` with flagged review + **reason lines** | “Track E listicles and Track G reviews — marketplace shows *why* it flagged.” |
-| **3:30–4:15** | `evaluation/JUDGE_SAMPLES.md` or live-fire table | “82% bake-off macro; 100% on high-confidence live-fire. Honest about 45–65% gray zone.” |
+| **3:30–4:15** | `evaluation/JUDGE_SAMPLES.md` or live-fire table | “96.7% bake-off macro on n=30 (`--full`); 100% on high-confidence live-fire. Honest about 45–65% gray zone.” |
 | **4:15–5:00** | Q&A — offer `JUDGES.md` link | “Clone, `npm run demo`, open demo.html — three minutes.” |
 
 ---

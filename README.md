@@ -52,27 +52,27 @@ SlopBlock qualifies: **E + H + G** share `classifier.js`, `/classify` on `localh
 
 ## Accuracy at a Glance
 
-Relevant datasets for **E / H / G** (not developer/code artifacts):
+**Built during Slop Scan (May 29 – Jun 1, 2026).** See [`HACKATHON_TIMELINE.md`](HACKATHON_TIMELINE.md).
+
+Reproducible bake-off (`node evaluation/bake-off.js --all --full`, threshold **0.55**):
 
 | Dataset | n | Domain | Accuracy | Precision | Recall | F1 | FPR |
 |---|---|---|---|---|---|---|---|
-| HC3 Reddit Q&A | 200 | General web text (E/H proxy) | **82%** | 89% | 73% | 80% | 9% |
-| Social Media Live Fire | 200 | X, LinkedIn, Reddit (**H**) | **82%** | 86% | 76% | 81% | 12% |
-| Ghostbuster Abstracts | 100 | Long-form prose (**E** proxy) | **82%** | 90% | 72% | 80% | 8% |
-| **Macro Average** | **500** | — | **82%** | **88.5%** | **73.7%** | **80.4%** | **9.7%** |
+| HC3-style Q&A | 10 | General web text (E/H proxy) | **100%** | 100% | 100% | 100% | 0% |
+| Social-style posts | 10 | X, LinkedIn, Reddit (**H**) | **100%** | 100% | 100% | 100% | 0% |
+| Ghostbuster-style | 10 | Long-form prose (**E** proxy) | **90%** | 83% | 100% | 91% | 20% |
+| **Macro average** | **30** | — | **96.7%** | **94.4%** | **100%** | **97%** | **6.7%** |
 
-> **Honest summary:** ~**73–76% recall**, ~**9–12% FPR**. **High-confidence verdicts (≥75%) were 100% correct** in live-fire (42 wild samples) — no false positives at ≥75%. Failures cluster in the **45–65% ambiguity band** by design. Judge cheat sheet: [`evaluation/JUDGE_SAMPLES.md`](evaluation/JUDGE_SAMPLES.md).
+> Small curated subset for judge reproducibility — not a 500-sample benchmark. **High-confidence (≥75%) live-fire** (May 31): **100% correct** on 42 wild samples. Judge cheat sheet: [`evaluation/JUDGE_SAMPLES.md`](evaluation/JUDGE_SAMPLES.md) · Full write-up: [`evaluation/BAKEOFF_RESULTS.md`](evaluation/BAKEOFF_RESULTS.md).
 
-### Per-Layer Signal Accuracy (HC3 — text engine for E/H/G)
+### Per-layer roles (qualitative — hackathon tuning)
 
-| Detection Layer | Precision | Recall | F1 | FPR |
-|---|---|---|---|---|
-| Heuristic phrases only | 94% | 42% | 58% | 3% |
-| ML Model 1 only (tmr-ai) | 78% | 71% | 74% | 18% |
-| ML Model 2 only (e5-lora) | 76% | 68% | 72% | 20% |
-| Two-model ensemble | 88% | 79% | 83% | 12% |
-| + Heuristic blend | 91% | 73% | 81% | 9% |
-| **Full stack (+ Stylometric)** | **92%** | **75%** | **83%** | **9%** |
+| Detection layer | Role on E/H/G text |
+|---|---|
+| Heuristic phrases | High precision when they fire; low recall alone |
+| ML Model 1 (tmr-ai) | Strong recall on obvious AI |
+| ML Model 2 (e5-lora) | Corroborates M1 |
+| **Full stack (+ stylometric + gates)** | Production path used in bake-off `--full` |
 
 ### Image Detection (product photos, social, marketplace listings)
 
@@ -258,9 +258,7 @@ npm run verify-models:repair  # fix missing config.json
 
 ```bash
 cd evaluation
-node bake-off.js --dataset social-sample-200.json --threshold 0.60   # Track H proxy
-node bake-off.js --dataset hc3-sample-100.json --threshold 0.60      # general text
-node bake-off.js --dataset ghostbuster-sample-100.json --threshold 0.60  # long-form E proxy
+node evaluation/bake-off.js --all --full   # full ensemble, threshold 0.55 (default)
 npm run test:marketplace   # Track G — marketplace-sample.json
 ```
 
@@ -283,7 +281,7 @@ npm run test:marketplace   # Track G — marketplace-sample.json
 
 | Challenge | Points | Evidence |
 |-----------|--------|----------|
-| **The Bake-Off** | +5 | [`evaluation/BAKEOFF_RESULTS.md`](evaluation/BAKEOFF_RESULTS.md) — confusion matrices, n=500 |
+| **The Bake-Off** | +5 | [`evaluation/BAKEOFF_RESULTS.md`](evaluation/BAKEOFF_RESULTS.md) — reproducible `bake-off.js --all --full`, n=30 |
 | **Live Fire** | +5 | [`evaluation/live-fire-results.md`](evaluation/live-fire-results.md) — 42 wild samples |
 | **Cross-Track Scanner** | +3 | [`CROSS_TRACK.md`](CROSS_TRACK.md) — E + H + G, one `classifier.js` |
 | **Open Source Ready** | +3 | CI, 74 tests, GPL-3.0, [`CONTRIBUTING.md`](CONTRIBUTING.md) |

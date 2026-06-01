@@ -112,8 +112,8 @@ Deep dive: [`docs/SIGNALS.md`](docs/SIGNALS.md) · Architecture: [`README.md`](R
 
 | Metric | Value |
 |--------|-------|
-| Macro accuracy (bake-off, n=500) | **82%** |
-| Recall / FPR | ~**73–76%** recall · ~**9–12%** FPR |
+| Macro accuracy (bake-off, n=30, `--full`) | **96.7%** |
+| Bake-off FPR (same run) | **6.7%** |
 | **High-confidence (≥75%) live-fire** | **100% correct** (42 wild samples) |
 | Marketplace bake-off (n=26) | **84.6%** acc · **0%** FPR · `npm run test:marketplace` |
 
@@ -127,10 +127,7 @@ Failures cluster in the **45–65% ambiguity band** by design. See [`evaluation/
 npm test
 npm run test:marketplace
 
-cd evaluation
-node bake-off.js --dataset social-sample-200.json --threshold 0.60
-node bake-off.js --dataset hc3-sample-100.json --threshold 0.60
-node bake-off.js --dataset ghostbuster-sample-100.json --threshold 0.60
+node evaluation/bake-off.js --all --full
 ```
 
 Results: [`evaluation/BAKEOFF_RESULTS.md`](evaluation/BAKEOFF_RESULTS.md)

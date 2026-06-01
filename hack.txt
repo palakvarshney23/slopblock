@@ -1,0 +1,626 @@
+Skip to content
+72-hour hackathon: build tools that catch low-effort AI content before it wastes anyone’s time
+•
+72-hour hackathon: build tools that catch low-effort AI content before it wastes anyone’s time
+•
+72-hour hackathon: build tools that catch low-effort AI content before it wastes anyone’s time
+•
+72-hour hackathon: build tools that catch low-effort AI content before it wastes anyone’s time
+•
+72-hour hackathon: build tools that catch low-effort AI content before it wastes anyone’s time
+•
+72-hour hackathon: build tools that catch low-effort AI content before it wastes anyone’s time
+•
+About
+Tracks
+Timeline
+Scoring
+Prizes
+Rules
+Judges
+FAQ
+Go to Discord
+SLOP SCAN
+The internet has a quality problem. Build tools that catch it.
+
+May 29 – Jun 1, 2026 · Online · Free · $1,800 in prizes
+
+Go to Discord
+01
+/
+The Problem
+“Slop” was the 2025 Word of the Year.[1][2] Merriam-Webster defined it as “digital content of low quality that is produced usually in quantity by means of artificial intelligence.”[3] Some researchers predict that the majority of online content will be synthetically generated within years.[4] Nobody is asking “was this made with AI?” anymore. The question now is “did a human actually check this before hitting publish?”
+
+You already know what slop looks like. The PR description that summarises the diff you can already read. The onboarding doc that restates its own heading for three paragraphs. The cover letter that could belong to literally anyone. The five-star review that reads like every other five-star review. The blog post that ranks on page one and says absolutely nothing.
+
+Generating slop is easy. Catching it? Almost nobody is working on that.
+
+Slop Scan is a 72-hour hackathon. Pick a domain where AI noise is doing real damage. Build a tool that spots what people can’t, or won’t, spot on their own.
+
+We’re not against AI. We’re against the lazy defaults. Nobody should have to waste 10 minutes reading something that took 10 seconds to generate.
+
+You have 72 hours.
+
+02
+/
+8 Tracks
+Each track covers a domain where AI slop is doing real damage. Pick one.
+
+A
+Code Review
+Detect hollow AI-generated pull requests, commit messages, and code comments that look right but say nothing.
+
+Build tools that:
+→
+Detect auto-generated code review artifacts and flag hollow documentation
+→
+Surface commits where the human clearly didn’t read what the AI wrote before pushing
+→
+Score PR descriptions for information density vs. diff-restating filler
+→
+Analyse commit message patterns to identify bulk AI-generated contributions
+DevOps engineers
+Senior developers
+Platform teams
+B
+Docs & KBs
+Scan internal documentation for AI-generated filler that sounds correct but teaches nothing.
+
+Build tools that:
+→
+Score documentation density — information per sentence, concrete examples per section
+→
+Detect circular explanations where paragraphs reference each other without adding content
+→
+Flag docs that don’t contain a single concrete example, code snippet, or specific instruction
+→
+Compare documentation claims against actual codebase behaviour
+Technical writers
+Developer advocates
+Engineering managers
+C
+Hiring & Resumes
+Expose AI-generated materials flooding the hiring pipeline. Resumes, cover letters, and take-homes that read the same.
+
+Build tools that:
+→
+Analyse application materials for AI-generation signals and templated structures
+→
+Detect copy-paste take-home submissions across candidate batches
+→
+Flag suspiciously uniform writing styles within a hiring pipeline
+→
+Help hiring teams design AI-resistant evaluation methods
+Engineering managers
+HR tech builders
+Recruiting teams
+D
+Communications
+Filter inflated AI-expanded messages in workplace communication channels. Three paragraphs where three words would do.
+
+Build tools that:
+→
+Flag inflated corporate-speak in internal comms and score signal-to-noise ratio
+→
+Detect when a Slack message was likely AI-expanded from a five-word thought
+→
+Surface email threads where replies contain less information than the subject line
+→
+Analyse meeting notes for content-free summarisation patterns
+Engineering managers
+Team leads
+Productivity tool builders
+E
+Content & SEO
+Build detection for the internet’s biggest slop vector. Blog posts that rank but say nothing, listicles that repeat.
+
+Build tools that:
+→
+Detect AI-generated SEO content at scale and score articles for originality vs. rehash
+→
+Flag product listings with likely hallucinated attributes or specifications
+→
+Build browser extensions that warn users before they waste time reading AI filler
+→
+Analyse content farms and surface patterns in mass-produced low-quality articles
+Content teams
+SEO professionals
+Browser extension builders
+F
+Academia
+Protect scholarly integrity from AI-generated papers, fabricated citations, and peer reviews that say nothing.
+
+Build tools that:
+→
+Detect AI-generated sections within academic papers and flag stylistic inconsistencies
+→
+Verify that cited sources actually exist and say what the citation claims they say
+→
+Flag suspiciously similar peer reviews across a review batch
+→
+Help admissions teams identify templated or AI-generated essays
+Researchers
+Academic publishers
+University admissions teams
+G
+Marketplaces
+Expose fake AI-generated reviews flooding every marketplace. Five-star ratings that all use the same sentence structure.
+
+Build tools that:
+→
+Cluster suspiciously similar reviews and detect AI-generated product feedback
+→
+Score review authenticity based on linguistic patterns, timing, and reviewer history
+→
+Build browser extensions that filter probable fake reviews before purchase
+→
+Analyse Q&A sections for bot-generated answers
+Consumer advocates
+E-commerce teams
+Browser extension builders
+H
+Social & News
+Detect synthetic content flooding feeds, fabricating reality. Bot networks, fake news, and engagement-farmed rage bait.
+
+Build tools that:
+→
+Detect AI-generated social posts at scale and flag synthetic news articles
+→
+Identify bot-network posting patterns and coordinated inauthentic behaviour
+→
+Create feed filters that surface authenticity signals alongside content
+→
+Analyse comment sections for bot-generated engagement patterns
+Journalists
+Trust & safety teams
+Civic tech builders
+03
+/
+Deliverables
+After 72 hours, we want to see something that works.
+
+A working tool. Not a slide deck. Not a concept. Something that takes input, runs analysis, and shows a human something they would have missed. Hosted somewhere, runnable locally, or demoed on video.
+
+Actual detection logic. Not just keyword matching. Show us how your tool decides what counts as slop. Linguistic analysis, pattern matching, statistical methods, structural checks. Whatever you use, explain why it works.
+
+Honest numbers. False positive rate, detection accuracy, the cases where it fails. Judges will trust you more if you say “this catches 60% of slop and here’s why the rest gets through” than if you claim 99% accuracy.
+
+You’ll submit:
+
+→
+Live link (Vercel, Netlify, GitHub Pages, etc.) OR executable demo OR video walkthrough
+→
+Source code (public GitHub repo)
+→
+Brief README explaining the detection approach
+→
+2–3 minute demo video showing the tool catching real slop
+04
+/
+Bonus Points
+Optional. Pick one and nail it. Don’t rush through all of them.
+
+The Bake-Off
++5
+Run your tool against a known dataset of AI-generated vs. human-written content and publish your accuracy metrics. Show the confusion matrix.
+
+Medium
+Live Fire
++5
+Demo your tool against real content scraped from the wild — actual PR descriptions, real Amazon reviews, live social media posts. Not synthetic test data.
+
+Hard
+Open Source Ready
++3
+Publish your tool as an installable package with documentation, CI, and a clear contribution guide.
+
+Medium
+Cross-Track Scanner
++3
+Build a tool that meaningfully detects slop across two or more tracks from a unified detection engine.
+
+Hard
+05
+/
+Out of Scope
+Save yourself the trouble. These won’t score well:
+
+✗
+Simple keyword detectors that flag em-dashes and call it a day
+✗
+Wrappers around GPTZero or Originality.ai with a new UI on top
+✗
+Tools that just ask another LLM “is this AI-generated?” (that’s delegation, not detection)
+✗
+Projects that shame people for using AI instead of surfacing quality problems
+✗
+Ideas too big to demo in 72 hours
+✗
+Anything requiring hardware, VR, or non-standard setup
+We’re not trying to ban AI. We want low-effort output to be visible so people can make their own call.
+
+06
+/
+Timeline
+All times UTC.
+
+Pre-Event
+May 1, 2026
+Registration Opens
+Sign up and join the Discord community.
+
+May 26, 2026
+Team Formation
+Find teammates on Discord or register as solo.
+
+Hackathon — 72h
+May 29, 2026 @ 10:00 UTC
+Kickoff & Hacking Begins
+Opening ceremony, track assignments confirmed.
+
+Jun 1, 2026 @ 10:00 UTC
+Code Freeze & Submissions Due
+Final commits. All project submissions must be in.
+
+Post-Event
+Jun 1–Jun 10, 2026
+Judges Evaluate Projects
+Judges review and score all submissions asynchronously.
+
+Jun 11, 2026
+Winners Announced
+Official winners revealed.
+
+Jun 11–Jun 17, 2026
+Community Voting
+Vote for your favourite projects from fellow participants.
+
+Jun 18, 2026
+Community Choice Winner Announced
+Community-voted winner announced.
+
+07
+/
+Scoring
+How submissions are scored.
+
+Detection Accuracy
+30%
+Does it actually catch slop that a human would miss? How often does it flag clean content by mistake?
+
+Practical Usefulness
+25%
+Would you actually install this on Monday? Does it fit into a real workflow?
+
+Technical Execution
+20%
+Clean code, smart architecture, handles edge cases. Works on real data, not just cherry-picked demos.
+
+Innovation
+15%
+Did you find a detection angle nobody else thought of? A signal that’s hard to fake?
+
+Presentation & Demo
+10%
+Can you show it working on real content and explain why your approach holds up?
+
+Bonus Challenges
+Challenge	Difficulty	Points
+The Bake-Off	Medium	+5
+Live Fire	Hard	+5
+Open Source Ready	Medium	+3
+Cross-Track Scanner	Hard	+3
+08
+/
+Prizes
+$1,800 total prize pool
+
+1st Place
+$800
+Grand Prize
+Best overall slop detection tool. The project that made judges say “I need this installed right now.”
+
+2nd Place
+$400
+Runner-Up
+Exceptional execution across the board. Strong detection, clean code, practical output. Almost took the crown.
+
+3rd Place
+$200
+Third Place
+A creative detection approach that stood out from the pack. Showed real promise and clear thinking.
+
+Sharpest Signal Place
+$100
+Sharpest Signal
+Found a detection angle nobody else thought of. A novel signal that’s hard to fake and impossible to ignore.
+
+Community Place
+$300
+Community Choice
+Voted by fellow participants after the hackathon. The project that people actually wanted to use themselves.
+
+09
+/
+Rules
+What counts as a valid submission.
+
+01
+Standalone & Runnable
+Your project must run locally with a single command (npm start, docker-compose up) or be live at a public URL. No custom environments.
+
+02
+Demo-Ready
+Prepare a 5-minute live demo for the judges on Discord. Pre-recorded video backup is fine, but live is preferred.
+
+03
+New Work Only
+All code written during the 72-hour window. Open-source libraries and frameworks are fair game. No pre-built projects.
+
+04
+Team Size
+1–4 people per team. Solo hackers welcome. Find teammates on the Hackathon Raptors Discord before or during the event.
+
+05
+Pick a Track
+Choose one primary track (A–H). Your project should clearly target that domain. Cross-track work earns bonus points.
+
+06
+Source Code
+All submissions must include a GitHub repo with source code. Repos go public after judging. No proprietary dependencies.
+
+07
+AI Tools Are Fine
+Claude, Cursor, Copilot, vibe-coding. We judge what you ship, not how you built it. Just disclose your tools in the submission form.
+
+10
+/
+Participants
+If you’ve ever wasted time on content that clearly nobody reviewed before publishing, this is your hackathon.
+
+Senior Engineers & Tech Leads
+You’ve seen the PR descriptions that say nothing. The docs that explain nothing. Build the tools your team actually needs.
+
+Track A
+Track B
+Track D
+Data Scientists & ML Engineers
+Detection is a classification problem. Bring your NLP chops to the biggest labelling challenge online right now.
+
+Track F
+Track E
+Track H
+DevOps & Platform Teams
+Build the CI/CD gates and pre-commit hooks that catch slop before it ships.
+
+Track A
+Track B
+Track C
+Product Managers & Designers
+Slop is a UX problem. Build interfaces that help people make quality decisions quickly.
+
+Track G
+Track E
+Track D
+Researchers & Academics
+Your field’s integrity is under pressure. Build the tools that protect it.
+
+Track F
+Track H
+Browser Extension Builders
+The best slop detectors will live where people read. Build for the browser.
+
+Track E
+Track G
+Track H
+11
+/
+Judges
+People who’ve shipped detection systems and care about this stuff.
+
+Amr Arqoub
+Amr Arqoub
+Amr is the Innovation Director of Technology & Partnerships
+
+Amr is the Innovation Director of Technology & Partnerships at Freshpet and a peer-elected Hackathon Raptors Fellow.
+
+Sushil Choubey
+Sushil Choubey
+Principal Supply Chain Manager
+
+Amazon
+
+Principal Supply Chain Manager at Amazon with 12+ years of experience in Supply Chain Management, Program Management and Operations.
+
+Sergii Demianchuk
+Sergii Demianchuk
+Cisco Systems
+
+SERGII DEMIANCHUK (Senior Software Engineering Technical Leader at Cisco) was born in Pardubice, Czech Republic, in 1989.
+
+Iuliia Kozlova
+Iuliia Kozlova
+SimbirSoft
+
+Lead Software Testing Expert specializing in enterprise-grade test automation and Kubernetes-based cloud infrastructure.
+
+Myroslav Mishov
+Myroslav Mishov
+Lead Enterprise Architect and CNCF Kubestronaut.
+
+Prankur Gupta
+Prankur Gupta
+Staff Software Engineer
+
+Meta
+
+Staff Software Engineer at Meta with 12+ years of experience in infrastructure and networking focusing on engineering reliability and observability at scale.
+
+Leonid Kulikov
+Leonid Kulikov
+Snap Inc
+
+Tech Lead, Machine Learning Engineer at Snap Inc with 7 years of experience in Machine Learning, Computer Vision and MLOps
+
+PIYUSH TIWARI
+PIYUSH TIWARI
+Senior Software Engineering Manager
+
+Wayfair
+
+Senior Software Engineering Manager at Wayfair working across data, generative AI, and platforms, with a track record of building production AI systems, data contract frameworks, and the quality controls that keep AI output trustworthy at scale.
+
+Also on the panel
+
+
+Amir Adigamov
+Amir Adigamov
+XRW LLC
+
+Shahzeb Akhtar
+Shahzeb Akhtar
+UnitedLex
+
+Nikolay Aleshin
+Nikolay Aleshin
+Avinash Bawane
+Avinash Bawane
+Apple
+
+Ritesh Bhalerao
+Ritesh Bhalerao
+dmodel
+
+Dmitriy Fedoryshchev
+Dmitriy Fedoryshchev
+EverCommerce
+
+Taran Goel
+Taran Goel
+Amazon
+
+Yevhenii Ivanchenko
+Yevhenii Ivanchenko
+Vishal Jain
+Vishal Jain
+Alok Kumar
+Alok Kumar
+Nvidia
+
+ANITHA SRI MAHESWARAN
+ANITHA SRI MAHESWARAN
+JackyBa
+
+Vyom Mittal
+Vyom Mittal
+Amazon
+
+Petr Osetrov
+Petr Osetrov
+Sole proprietor
+
+Yogesh kumar pandey
+Yogesh kumar pandey
+Sambit Panigrahi
+Sambit Panigrahi
+Vitas Healthcare
+
+Sreekanth Reddy Panyam
+Sreekanth Reddy Panyam
+Maninderjit Parmar
+Maninderjit Parmar
+Snowflake
+
+Maitrik Patel
+Maitrik Patel
+Apple
+
+Maksim Petriev
+Maksim Petriev
+Neha Prakash
+Neha Prakash
+Venugopal Rapelli
+Venugopal Rapelli
+Manisha Sengupta
+Manisha Sengupta
+Brown Brothers Harriman & Co.
+
+Maayan Mishin Shuvi
+Maayan Mishin Shuvi
+Snap
+
+Venkata Kartheek Reddy Somasani
+Venkata Kartheek Reddy Somasani
+City Of Dallas
+
+Enzo Tolentino
+Enzo Tolentino
+Banco de Credito del Peru - BCP
+
+Duygu Unlu
+Duygu Unlu
+Fametech Inc
+
+Khushboo Kumari Yadav
+Khushboo Kumari Yadav
+Intel Corporation
+
+FAQ
+“Slop” was the 2025 Word of the Year from both Merriam-Webster and the American Dialect Society. Not “was it made with AI?” The question is “did anyone bother checking it?”
+13
+/
+Why Now
+Generating content got cheap. Evaluating it didn’t. That gap is the whole problem.
+
+GitHub Copilot now writes 46% of code in files where it’s enabled.[6] Up to 22% of computer science papers show signs of AI-generated content.[7] On Amazon, 3% of front-page reviews are AI-generated — and 74% of those are five-star ratings.[8]
+
+Code review depends on the assumption that someone actually read the code. Documentation depends on someone caring enough to write a real explanation. Hiring depends on applications that reflect real experience. Academic publishing depends on peer reviewers doing real work. Marketplaces depend on reviews from people who bought the thing.
+
+None of these systems break all at once. They just get a little worse every week. The PR descriptions get vaguer. The docs get more circular. The reviews get less trustworthy. One day you realise you don’t trust any of it, and you can’t point to when it changed.
+
+That’s what slop does. Not destruction. Erosion.
+
+The internet has a quality problem. You have 72 hours.
+
+References
+[1]
+Merriam-Webster, “2025 Word of the Year” — merriam-webster.com/wordplay/word-of-the-year
+[2]
+American Dialect Society, “2025 Word of the Year Is Slop” — americandialect.org/2025-word-of-the-year-is-slop
+[3]
+Merriam-Webster, “Slop” (dictionary entry) — merriam-webster.com/dictionary/slop
+[4]
+Europol Innovation Lab, “Facing Reality? Law Enforcement And The Challenge Of Deepfakes”, 2022 (citing Nina Schick, Deepfakes: The Coming Infocalypse, 2020)
+[5]
+CoverSentry, “AI Job Search Statistics”, 2025 — coversentry.com/ai-job-search-statistics
+[6]
+GitHub / Thomas Dohmke, “GitHub Copilot generates 46% of code”, 2025
+[7]
+Zou et al., Nature Human Behaviour, “Monitoring AI-Modified Content at Scale”, 2024 — science.org/content/article/one-fifth-computer-science-papers-may-include-ai-content
+[8]
+Pangram Labs, “AI-Generated Amazon Reviews”, 2025 — pangram.com/blog/ai-amazon-reviews
+[9]
+Pangram Labs / Nature News, “Major AI conference flooded with peer reviews written fully by AI”, 2025 — nature.com/articles/d41586-025-03506-6
+[10]
+Ahrefs, “What Percentage of New Content Is AI-Generated?”, 2025 — ahrefs.com/blog/what-percentage-of-new-content-is-ai-generated
+[11]
+NewsGuard AI Tracking Center, 2025 — newsguardtech.com/special-reports/ai-tracking-center
+SLOP SCAN
+A raptors.dev hackathon. Build tools that detect, filter, and fight AI-generated slop.
+
+Go to Discord
+Navigate
+About
+Tracks
+Timeline
+Scoring
+Prizes
+Rules
+Judges
+FAQ
+Connect
+hello@raptors.dev
+Hackathon Raptors
+Community Interest Company — 15557917
+Office 2131, 182-184 High Street North, East Ham, London, E6 2JA, United Kingdom
+© 2026 Slop Scan Hackathon · Built by raptors.dev ↗
